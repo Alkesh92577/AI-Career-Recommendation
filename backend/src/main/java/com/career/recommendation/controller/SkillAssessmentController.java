@@ -10,7 +10,6 @@ import com.career.recommendation.service.SkillAssessmentService;
 
 @RestController
 @RequestMapping("/api/skill-assessments")
-@CrossOrigin(origins = "http://localhost:5173")
 public class SkillAssessmentController {
 
     private final SkillAssessmentService service;

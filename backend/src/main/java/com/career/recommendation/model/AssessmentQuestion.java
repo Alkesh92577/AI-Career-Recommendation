@@ -7,7 +7,10 @@ import jakarta.persistence.*;
 public class AssessmentQuestion {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy =
+            GenerationType.IDENTITY
+    )
     private Long id;
 
 
@@ -43,7 +46,10 @@ public class AssessmentQuestion {
     private String correctAnswer;
 
 
-    @Column(name = "explanation", length = 2000)
+    @Column(
+            name = "explanation",
+            length = 2000
+    )
     private String explanation;
 
 
@@ -52,91 +58,141 @@ public class AssessmentQuestion {
     // ==========================================
 
     public Long getId() {
+
         return id;
     }
 
-    public void setId(Long id) {
+
+    public void setId(
+            Long id) {
+
         this.id = id;
     }
 
 
     public String getCareerField() {
+
         return careerField;
     }
 
-    public void setCareerField(String careerField) {
-        this.careerField = careerField;
+
+    public void setCareerField(
+            String careerField) {
+
+        this.careerField =
+                careerField;
     }
 
 
     public String getCourseName() {
+
         return courseName;
     }
 
-    public void setCourseName(String courseName) {
-        this.courseName = courseName;
+
+    public void setCourseName(
+            String courseName) {
+
+        this.courseName =
+                courseName;
     }
 
 
     public String getQuestionText() {
+
         return questionText;
     }
 
-    public void setQuestionText(String questionText) {
-        this.questionText = questionText;
+
+    public void setQuestionText(
+            String questionText) {
+
+        this.questionText =
+                questionText;
     }
 
 
     public String getOptionA() {
+
         return optionA;
     }
 
-    public void setOptionA(String optionA) {
-        this.optionA = optionA;
+
+    public void setOptionA(
+            String optionA) {
+
+        this.optionA =
+                optionA;
     }
 
 
     public String getOptionB() {
+
         return optionB;
     }
 
-    public void setOptionB(String optionB) {
-        this.optionB = optionB;
+
+    public void setOptionB(
+            String optionB) {
+
+        this.optionB =
+                optionB;
     }
 
 
     public String getOptionC() {
+
         return optionC;
     }
 
-    public void setOptionC(String optionC) {
-        this.optionC = optionC;
+
+    public void setOptionC(
+            String optionC) {
+
+        this.optionC =
+                optionC;
     }
 
 
     public String getOptionD() {
+
         return optionD;
     }
 
-    public void setOptionD(String optionD) {
-        this.optionD = optionD;
+
+    public void setOptionD(
+            String optionD) {
+
+        this.optionD =
+                optionD;
     }
 
 
     public String getCorrectAnswer() {
+
         return correctAnswer;
     }
 
-    public void setCorrectAnswer(String correctAnswer) {
-        this.correctAnswer = correctAnswer;
+
+    public void setCorrectAnswer(
+            String correctAnswer) {
+
+        this.correctAnswer =
+                correctAnswer;
     }
 
 
     public String getExplanation() {
+
         return explanation;
     }
 
-    public void setExplanation(String explanation) {
-        this.explanation = explanation;
+
+    public void setExplanation(
+            String explanation) {
+
+        this.explanation =
+                explanation;
     }
+
 }

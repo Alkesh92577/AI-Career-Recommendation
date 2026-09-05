@@ -15,7 +15,7 @@ public class CareerRecommendationApplication {
 
         System.out.println("====================================");
         System.out.println(" Career Recommendation Backend Started ");
-        System.out.println(" http://10.72.150.168:8080 ");
+        System.out.println(" http://localhost:8080 ");
         System.out.println("====================================");
     }
 }

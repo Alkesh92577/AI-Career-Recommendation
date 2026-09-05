@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = "http://10.72.150.168:8080/api/career-report";
+import api from "./api";
 
 const careerReportService = {
 
@@ -10,11 +8,20 @@ const careerReportService = {
 
   getCareerReport: async (studentId) => {
 
-    const response = await axios.get(
-      `${API_URL}/${studentId}`
+    if (!studentId) {
+
+      throw new Error(
+        "Student ID is required"
+      );
+
+    }
+
+    const response = await api.get(
+      `/career-report/${studentId}`
     );
 
     return response.data;
+
   }
 
 };

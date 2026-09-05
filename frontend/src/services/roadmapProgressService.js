@@ -1,8 +1,4 @@
-import axios from "axios";
-
-
-const API_URL =
-    "http://10.72.150.168:8080/api/roadmap-progress";
+import api from "./api";
 
 
 const roadmapProgressService = {
@@ -15,8 +11,8 @@ const roadmapProgressService = {
     getByStudentId: async (studentId) => {
 
         const response =
-            await axios.get(
-                `${API_URL}/student/${studentId}`
+            await api.get(
+                `/roadmap-progress/student/${studentId}`
             );
 
         return response.data;
@@ -35,17 +31,14 @@ const roadmapProgressService = {
     ) => {
 
         const response =
-            await axios.post(
-                `${API_URL}/update`,
+            await api.post(
+                "/roadmap-progress/update",
                 {
-                    studentId:
-                        studentId,
+                    studentId: studentId,
 
-                    roadmapId:
-                        roadmapId,
+                    roadmapId: roadmapId,
 
-                    completed:
-                        completed
+                    completed: completed
                 }
             );
 

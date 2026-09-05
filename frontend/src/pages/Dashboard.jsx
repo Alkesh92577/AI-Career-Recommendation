@@ -10,7 +10,7 @@ import interestAssessmentService from "../services/interestAssessmentService";
 // =====================================================
 
 const PREDICTION_API =
-  "http://10.72.150.168:8080/api/predictions";
+  "http://ai-career-recommendation-production.up.railway.app/api/predictions";
 
 // =====================================================
 // COMPONENT
@@ -1095,7 +1095,7 @@ function Dashboard() {
 
             const response =
               await axios.get(
-                `http://10.72.150.168:8080/api/dashboard/${studentId}`
+                `http://ai-career-recommendation-production.up.railway.app/api/dashboard/${studentId}`
               );
 
             console.log(

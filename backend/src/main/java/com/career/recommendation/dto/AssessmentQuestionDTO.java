@@ -35,46 +35,71 @@ public class AssessmentQuestionDTO {
 
 
     public Long getId() {
+
         return id;
     }
 
-    public void setId(Long id) {
+
+    public void setId(
+            Long id) {
+
         this.id = id;
     }
 
 
     public String getCareerField() {
+
         return careerField;
     }
 
-    public void setCareerField(String careerField) {
-        this.careerField = careerField;
+
+    public void setCareerField(
+            String careerField) {
+
+        this.careerField =
+                careerField;
     }
 
 
     public String getCourseName() {
+
         return courseName;
     }
 
-    public void setCourseName(String courseName) {
-        this.courseName = courseName;
+
+    public void setCourseName(
+            String courseName) {
+
+        this.courseName =
+                courseName;
     }
 
 
     public String getQuestion() {
+
         return question;
     }
 
-    public void setQuestion(String question) {
-        this.question = question;
+
+    public void setQuestion(
+            String question) {
+
+        this.question =
+                question;
     }
 
 
     public List<String> getOptions() {
+
         return options;
     }
 
-    public void setOptions(List<String> options) {
-        this.options = options;
+
+    public void setOptions(
+            List<String> options) {
+
+        this.options =
+                options;
     }
+
 }

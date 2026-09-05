@@ -1,4 +1,7 @@
-# Logs
+# ==========================================
+# LOG FILES
+# ==========================================
+
 logs
 *.log
 npm-debug.log*
@@ -7,18 +10,121 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
-node_modules
-dist
-dist-ssr
+
+# ==========================================
+# NODE / REACT
+# ==========================================
+
+node_modules/
+frontend/node_modules/
+
+dist/
+dist-ssr/
 *.local
 
-# Editor directories and files
+frontend/dist/
+
+
+# ==========================================
+# ENVIRONMENT VARIABLES
+# ==========================================
+
+.env
+.env.*
+!.env.example
+
+frontend/.env
+backend/.env
+ml-service/.env
+
+
+# ==========================================
+# JAVA / SPRING BOOT
+# ==========================================
+
+backend/target/
+target/
+
+*.class
+*.jar
+*.war
+
+.gradle/
+build/
+
+
+# ==========================================
+# PYTHON / ML SERVICE
+# ==========================================
+
+__pycache__/
+*.py[cod]
+*$py.class
+
+*.so
+
+.Python
+
+venv/
+env/
+.venv/
+
+ml-service/venv/
+ml-service/env/
+ml-service/.venv/
+
+
+# Python cache
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+
+# ==========================================
+# JUPYTER
+# ==========================================
+
+.ipynb_checkpoints/
+
+
+# ==========================================
+# IDE / EDITORS
+# ==========================================
+
 .vscode/*
 !.vscode/extensions.json
-.idea
-.DS_Store
+
+.idea/
+
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+
+
+# ==========================================
+# OS FILES
+# ==========================================
+
+.DS_Store
+Thumbs.db
+
+
+# ==========================================
+# TEMPORARY FILES
+# ==========================================
+
+*.tmp
+*.temp
+
+
+# ==========================================
+# IMPORTANT
+# ==========================================
+# ML MODEL IS REQUIRED FOR RAILWAY DEPLOYMENT
+# DO NOT IGNORE:
+#
+# ml-service/model/career_model.pkl
+#
+# This file must be uploaded to GitHub.

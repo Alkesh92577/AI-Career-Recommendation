@@ -1,7 +1,5 @@
-import axios from "axios";
+import api from "./api";
 
-const API_URL =
-    "http://10.72.150.168:8080/api/skill-assessments";
 
 const skillAssessmentService = {
 
@@ -11,8 +9,8 @@ const skillAssessmentService = {
 
     getByStudentId: async (studentId) => {
 
-        const response = await axios.get(
-            `${API_URL}/student/${studentId}`
+        const response = await api.get(
+            `/skill-assessments/student/${studentId}`
         );
 
         return response.data;
@@ -23,10 +21,13 @@ const skillAssessmentService = {
     // SAVE ASSESSMENT
     // ==========================================
 
-    save: async (studentId, assessments) => {
+    save: async (
+        studentId,
+        assessments
+    ) => {
 
-        const response = await axios.post(
-            `${API_URL}/student/${studentId}`,
+        const response = await api.post(
+            `/skill-assessments/student/${studentId}`,
             assessments
         );
 
@@ -34,5 +35,6 @@ const skillAssessmentService = {
     }
 
 };
+
 
 export default skillAssessmentService;

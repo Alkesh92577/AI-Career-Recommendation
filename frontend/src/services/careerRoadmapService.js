@@ -1,35 +1,70 @@
-import axios from "axios";
-
-const API_URL =
-    "http://10.72.150.168:8080/api/career-roadmap";
+import api from "./api";
 
 const careerRoadmapService = {
 
+    // ==========================================
+    // GET ROADMAP BY STUDENT ID
+    // ==========================================
+
     getByStudentId: async (studentId) => {
 
+        if (!studentId) {
+
+            throw new Error(
+                "Student ID is required"
+            );
+
+        }
+
         const response =
-            await axios.get(
-                `${API_URL}/student/${studentId}`
+            await api.get(
+                `/career-roadmap/student/${studentId}`
             );
 
         return response.data;
     },
+
+
+    // ==========================================
+    // GENERATE CAREER ROADMAP
+    // ==========================================
 
     generate: async (studentId) => {
 
+        if (!studentId) {
+
+            throw new Error(
+                "Student ID is required"
+            );
+
+        }
+
         const response =
-            await axios.post(
-                `${API_URL}/generate/${studentId}`
+            await api.post(
+                `/career-roadmap/generate/${studentId}`
             );
 
         return response.data;
     },
 
+
+    // ==========================================
+    // DELETE CAREER ROADMAP
+    // ==========================================
+
     deleteByStudentId: async (studentId) => {
 
+        if (!studentId) {
+
+            throw new Error(
+                "Student ID is required"
+            );
+
+        }
+
         const response =
-            await axios.delete(
-                `${API_URL}/student/${studentId}`
+            await api.delete(
+                `/career-roadmap/student/${studentId}`
             );
 
         return response.data;

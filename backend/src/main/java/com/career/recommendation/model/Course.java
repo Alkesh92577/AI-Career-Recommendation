@@ -90,4 +90,5 @@ public class Course {
     public void setPlatform(String platform) {
         this.platform = platform;
     }
+    
 }

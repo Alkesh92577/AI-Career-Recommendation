@@ -1,43 +1,50 @@
-import axios from "axios";
+import api from "./api";
 
-const API_URL =
-    "http://10.72.150.168:8080/api/interest-assessments";
 
 const interestAssessmentService = {
 
-    // GET ALL
+    // ==========================================
+    // GET ALL INTEREST ASSESSMENTS
+    // ==========================================
+
     getByStudentId: async (studentId) => {
 
         const response =
-            await axios.get(
-                `${API_URL}/student/${studentId}`
+            await api.get(
+                `/interest-assessments/student/${studentId}`
             );
 
         return response.data;
     },
 
 
+    // ==========================================
     // GET LATEST INTEREST TEST
+    // ==========================================
+
     getLatest: async (studentId) => {
 
         const response =
-            await axios.get(
-                `${API_URL}/student/${studentId}/latest`
+            await api.get(
+                `/interest-assessments/student/${studentId}/latest`
             );
 
         return response.data;
     },
 
 
+    // ==========================================
     // SAVE COMPLETE TEST
+    // ==========================================
+
     saveAll: async (
         studentId,
         assessments
     ) => {
 
         const response =
-            await axios.post(
-                `${API_URL}/student/${studentId}/all`,
+            await api.post(
+                `/interest-assessments/student/${studentId}/all`,
                 assessments
             );
 
@@ -45,17 +52,21 @@ const interestAssessmentService = {
     },
 
 
+    // ==========================================
     // DELETE HISTORY
+    // ==========================================
+
     deleteByStudentId: async (studentId) => {
 
         const response =
-            await axios.delete(
-                `${API_URL}/student/${studentId}`
+            await api.delete(
+                `/interest-assessments/student/${studentId}`
             );
 
         return response.data;
     }
 
 };
+
 
 export default interestAssessmentService;

@@ -1,7 +1,4 @@
-import axios from "axios";
-
-const API_URL =
-    "http://10.72.150.168:8080/api/assessment-questions";
+import api from "./api";
 
 
 // =====================================================
@@ -9,86 +6,108 @@ const API_URL =
 // =====================================================
 
 const getByStudentId = async (
-    studentId,
-    skillNames
+  studentId,
+  skillNames
 ) => {
 
-    // ===================================================
-    // STUDENT ID VALIDATION
-    // ===================================================
+  // ==========================================
+  // STUDENT ID VALIDATION
+  // ==========================================
 
-    if (!studentId) {
+  if (!studentId) {
 
-        throw new Error(
-            "Student ID is required"
-        );
+    throw new Error(
+      "Student ID is required"
+    );
 
-    }
-
-
-    // ===================================================
-    // SKILLS VALIDATION
-    // ===================================================
-
-    if (
-        !skillNames ||
-        skillNames.length === 0
-    ) {
-
-        console.warn(
-            "No skills found for assessment"
-        );
-
-        return [];
-
-    }
+  }
 
 
-    // ===================================================
-    // CLEAN SKILLS
-    // ===================================================
+  // ==========================================
+  // SKILLS VALIDATION
+  // ==========================================
 
-    const cleanSkills =
-        skillNames
-            .filter(
-                skill =>
-                    skill &&
-                    skill.trim() !== ""
-            )
-            .map(
-                skill =>
-                    skill.trim()
-            );
+  if (
+    !Array.isArray(skillNames) ||
+    skillNames.length === 0
+  ) {
+
+    console.warn(
+      "No skills found for assessment"
+    );
+
+    return [];
+
+  }
 
 
-    console.log(
-        "Sending Skills To Backend:",
-        cleanSkills
+  // ==========================================
+  // CLEAN SKILLS
+  // ==========================================
+
+  const cleanSkills =
+    skillNames
+      .filter(
+        (skill) =>
+          skill !== null &&
+          skill !== undefined &&
+          String(skill).trim() !== ""
+      )
+      .map(
+        (skill) =>
+          String(skill).trim()
+      );
+
+
+  console.log(
+    "================================"
+  );
+
+  console.log(
+    "ASSESSMENT REQUEST"
+  );
+
+  console.log(
+    "Student ID:",
+    studentId
+  );
+
+  console.log(
+    "Skills:",
+    cleanSkills
+  );
+
+
+  // ==========================================
+  // SEND REQUEST TO BACKEND
+  // ==========================================
+
+  const response =
+    await api.post(
+      `/assessment-questions/student/${studentId}`,
+      cleanSkills
     );
 
 
-    // ===================================================
-    // SEND SKILLS TO BACKEND
-    // ===================================================
+  console.log(
+    "Assessment API Response:",
+    response.data
+  );
 
-    const response =
-        await axios.post(
-            `${API_URL}/student/${studentId}`,
-            cleanSkills
-        );
+  console.log(
+    "Questions Count:",
+    Array.isArray(response.data)
+      ? response.data.length
+      : 0
+  );
 
-
-    // ===================================================
-    // BACKEND RESPONSE
-    // ===================================================
-
-    console.log(
-        "Questions From Backend:",
-        response.data
-    );
+  console.log(
+    "================================"
+  );
 
 
-    return response.data;
+  return response.data;
+
 };
 
 
@@ -98,6 +117,6 @@ const getByStudentId = async (
 
 export default {
 
-    getByStudentId
+  getByStudentId
 
 };

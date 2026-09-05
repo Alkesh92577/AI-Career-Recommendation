@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = "http://10.72.150.168:8080/api/courses";
+import api from "./api";
 
 
 // ==========================================
@@ -9,9 +7,12 @@ const API_URL = "http://10.72.150.168:8080/api/courses";
 
 const getAllCourses = async () => {
 
-  const response = await axios.get(API_URL);
+  const response = await api.get(
+    "/courses"
+  );
 
   return response.data;
+
 };
 
 
@@ -19,13 +20,16 @@ const getAllCourses = async () => {
 // GET COURSES BY CAREER
 // ==========================================
 
-const getCoursesByCareer = async (career) => {
+const getCoursesByCareer = async (
+  career
+) => {
 
-  const response = await axios.get(
-    `${API_URL}/career/${encodeURIComponent(career)}`
+  const response = await api.get(
+    `/courses/career/${encodeURIComponent(career)}`
   );
 
   return response.data;
+
 };
 
 
@@ -33,13 +37,34 @@ const getCoursesByCareer = async (career) => {
 // GET COURSE BY ID
 // ==========================================
 
-const getCourseById = async (id) => {
+const getCourseById = async (
+  id
+) => {
 
-  const response = await axios.get(
-    `${API_URL}/${id}`
+  const response = await api.get(
+    `/courses/${id}`
   );
 
   return response.data;
+
+};
+
+
+// ==========================================
+// ADD COURSE
+// ==========================================
+
+const addCourse = async (
+  course
+) => {
+
+  const response = await api.post(
+    "/courses",
+    course
+  );
+
+  return response.data;
+
 };
 
 
@@ -53,8 +78,11 @@ const courseService = {
 
   getCoursesByCareer,
 
-  getCourseById
+  getCourseById,
+
+  addCourse
 
 };
+
 
 export default courseService;

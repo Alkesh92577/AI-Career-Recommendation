@@ -1,9 +1,6 @@
-import axios from "axios";
-
-const API_URL = "http://10.72.150.168:8080/api/skills";
+import api from "./api";
 
 const skillService = {
-
 
   // ==========================================
   // GET SKILLS BY STUDENT ID
@@ -11,8 +8,8 @@ const skillService = {
 
   getByStudentId: async (studentId) => {
 
-    const response = await axios.get(
-      `${API_URL}/student/${studentId}`
+    const response = await api.get(
+      `/skills/student/${studentId}`
     );
 
     return response.data;
@@ -25,8 +22,8 @@ const skillService = {
 
   create: async (skill) => {
 
-    const response = await axios.post(
-      API_URL,
+    const response = await api.post(
+      "/skills",
       skill
     );
 
@@ -40,8 +37,8 @@ const skillService = {
 
   update: async (id, skill) => {
 
-    const response = await axios.put(
-      `${API_URL}/${id}`,
+    const response = await api.put(
+      `/skills/${id}`,
       skill
     );
 
@@ -55,13 +52,12 @@ const skillService = {
 
   delete: async (id) => {
 
-    await axios.delete(
-      `${API_URL}/${id}`
+    await api.delete(
+      `/skills/${id}`
     );
 
   }
 
 };
-
 
 export default skillService;

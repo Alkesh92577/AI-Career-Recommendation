@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API_URL = "http:// 10.72.150.168:8080/api/students";
+import api from "./api";
 
 const studentService = {
 
@@ -10,8 +8,8 @@ const studentService = {
 
   getByUserId: async (userId) => {
 
-    const response = await axios.get(
-      `${API_URL}/user/${userId}`
+    const response = await api.get(
+      `/students/user/${userId}`
     );
 
     return response.data;
@@ -24,8 +22,8 @@ const studentService = {
 
   create: async (student) => {
 
-    const response = await axios.post(
-      API_URL,
+    const response = await api.post(
+      "/students",
       student
     );
 
@@ -39,8 +37,8 @@ const studentService = {
 
   update: async (id, student) => {
 
-    const response = await axios.put(
-      `${API_URL}/${id}`,
+    const response = await api.put(
+      `/students/${id}`,
       student
     );
 
@@ -52,10 +50,13 @@ const studentService = {
   // UPDATE ACADEMIC DETAILS
   // ==========================================
 
-  updateAcademic: async (studentId, academicData) => {
+  updateAcademic: async (
+    studentId,
+    academicData
+  ) => {
 
-    const response = await axios.put(
-      `${API_URL}/${studentId}/academic`,
+    const response = await api.put(
+      `/students/${studentId}/academic`,
       academicData
     );
 

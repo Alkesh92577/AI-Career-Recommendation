@@ -8,10 +8,10 @@ import studentService from "../services/studentService";
 // =====================================================
 
 const PREDICTION_API =
-    "http://10.72.150.168:8080/api/predictions";
+    "http://ai-career-recommendation-production.up.railway.app/api/predictions";
 
 const COURSE_API =
-    "http://10.72.150.168:8080/api/courses";
+    "http://ai-career-recommendation-production.up.railway.app/api/courses";
 
 // =====================================================
 // CAREER REPORT

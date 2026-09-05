@@ -2,6 +2,7 @@ from flask import Flask, request, jsonify
 import joblib
 import pandas as pd
 import os
+import traceback
 
 
 # ==========================================
@@ -12,10 +13,20 @@ app = Flask(__name__)
 
 
 # ==========================================
+# BASE DIRECTORY
+# ==========================================
+
+BASE_DIR = os.path.dirname(
+    os.path.abspath(__file__)
+)
+
+
+# ==========================================
 # MODEL PATH
 # ==========================================
 
 MODEL_PATH = os.path.join(
+    BASE_DIR,
     "model",
     "career_model.pkl"
 )
@@ -47,18 +58,60 @@ if not os.path.exists(MODEL_PATH):
 
     raise FileNotFoundError(
         f"ML model not found: {MODEL_PATH}\n"
-        "Please run train.py first."
+        "Please make sure career_model.pkl exists "
+        "inside the model folder."
     )
 
 
-model = joblib.load(
-    MODEL_PATH
-)
+try:
+
+    model = joblib.load(
+        MODEL_PATH
+    )
+
+    print(
+        "ML model loaded successfully!"
+    )
 
 
-print(
-    "ML model loaded successfully!"
-)
+except Exception as e:
+
+    print(
+        "ERROR: Failed to load ML model"
+    )
+
+    print(
+        str(e)
+    )
+
+    raise e
+
+
+# ==========================================
+# REQUIRED MODEL FEATURES
+# ==========================================
+
+FEATURES = [
+
+    "programming_level",
+
+    "preferred_field",
+
+    "tenth_marks",
+
+    "twelfth_marks",
+
+    "graduation_marks",
+
+    "semester",
+
+    "backlogs",
+
+    "skill_score",
+
+    "assessment_score"
+
+]
 
 
 # ==========================================
@@ -69,18 +122,51 @@ print(
     "/",
     methods=["GET"]
 )
-
 def home():
 
     return jsonify({
+
+        "success": True,
 
         "message":
             "AI Career Recommendation ML API is running",
 
         "status":
-            "success"
+            "success",
 
-    })
+        "prediction_endpoint":
+            "/predict",
+
+        "health_endpoint":
+            "/health"
+
+    }), 200
+
+
+# ==========================================
+# HEALTH CHECK API
+# ==========================================
+
+@app.route(
+    "/health",
+    methods=["GET"]
+)
+def health():
+
+    return jsonify({
+
+        "success": True,
+
+        "status":
+            "UP",
+
+        "message":
+            "ML service is healthy",
+
+        "model_loaded":
+            True
+
+    }), 200
 
 
 # ==========================================
@@ -91,7 +177,6 @@ def home():
     "/predict",
     methods=["POST"]
 )
-
 def predict():
 
     try:
@@ -106,6 +191,9 @@ def predict():
         if not data:
 
             return jsonify({
+
+                "success":
+                    False,
 
                 "error":
                     "No data received",
@@ -128,7 +216,6 @@ def predict():
             "=========================================="
         )
 
-
         print(
             "Received data:"
         )
@@ -139,83 +226,106 @@ def predict():
 
 
         # ==================================
+        # CHECK REQUIRED FIELDS
+        # ==================================
+
+        missing_fields = []
+
+
+        for field in FEATURES:
+
+            if field not in data:
+
+                missing_fields.append(
+                    field
+                )
+
+
+        if len(missing_fields) > 0:
+
+            return jsonify({
+
+                "success":
+                    False,
+
+                "error":
+                    "Missing required fields",
+
+                "missing_fields":
+                    missing_fields
+
+            }), 400
+
+
+        # ==================================
         # GET INPUT VALUES
         # ==================================
 
-        programming_level = data.get(
-            "programming_level",
-            "Beginner"
+        programming_level = str(
+            data.get(
+                "programming_level"
+            )
         )
 
 
-        preferred_field = data.get(
-            "preferred_field",
-            ""
+        preferred_field = str(
+            data.get(
+                "preferred_field"
+            )
         )
 
 
         tenth_marks = float(
             data.get(
-                "tenth_marks",
-                0
+                "tenth_marks"
             )
         )
 
 
         twelfth_marks = float(
             data.get(
-                "twelfth_marks",
-                0
+                "twelfth_marks"
             )
         )
 
 
         graduation_marks = float(
             data.get(
-                "graduation_marks",
-                0
+                "graduation_marks"
             )
         )
 
 
         semester = int(
             data.get(
-                "semester",
-                0
+                "semester"
             )
         )
 
 
         backlogs = int(
             data.get(
-                "backlogs",
-                0
+                "backlogs"
             )
         )
 
 
         skill_score = float(
             data.get(
-                "skill_score",
-                0
+                "skill_score"
             )
         )
 
 
         assessment_score = float(
             data.get(
-                "assessment_score",
-                0
+                "assessment_score"
             )
         )
 
 
         # ==================================
         # CREATE INPUT DATAFRAME
-        # ==================================
-        # IMPORTANT:
-        # best_skill and best_skill_score
-        # completely removed.
         # ==================================
 
         input_data = pd.DataFrame([{
@@ -254,31 +364,8 @@ def predict():
         # FORCE CORRECT COLUMN ORDER
         # ==================================
 
-        features = [
-
-            "programming_level",
-
-            "preferred_field",
-
-            "tenth_marks",
-
-            "twelfth_marks",
-
-            "graduation_marks",
-
-            "semester",
-
-            "backlogs",
-
-            "skill_score",
-
-            "assessment_score"
-
-        ]
-
-
         input_data = input_data[
-            features
+            FEATURES
         ]
 
 
@@ -300,7 +387,7 @@ def predict():
         )
 
         print(
-            features
+            FEATURES
         )
 
 
@@ -317,6 +404,7 @@ def predict():
                 model.feature_names_in_
             )
 
+
             print(
                 "\nModel expects features:"
             )
@@ -326,21 +414,24 @@ def predict():
             )
 
 
-            if model_features != features:
+            if model_features != FEATURES:
 
                 return jsonify({
+
+                    "success":
+                        False,
 
                     "error":
                         "ML model feature mismatch",
 
                     "message":
-                        "Old ML model detected. Please retrain the model using train.py.",
+                        "The loaded ML model expects different features.",
 
                     "model_features":
                         model_features,
 
                     "required_features":
-                        features
+                        FEATURES
 
                 }), 500
 
@@ -354,7 +445,9 @@ def predict():
         )
 
 
-        career = prediction[0]
+        career = str(
+            prediction[0]
+        )
 
 
         # ==================================
@@ -386,6 +479,9 @@ def predict():
         # ==================================
 
         response = {
+
+            "success":
+                True,
 
             "career":
                 career,
@@ -431,13 +527,29 @@ def predict():
         )
 
         print(
-            "=========================================="
+            "==========================================\n"
         )
 
 
         return jsonify(
             response
-        )
+        ), 200
+
+
+    except ValueError as e:
+
+        return jsonify({
+
+            "success":
+                False,
+
+            "error":
+                "Invalid input data",
+
+            "message":
+                str(e)
+
+        }), 400
 
 
     except Exception as e:
@@ -458,12 +570,17 @@ def predict():
             "=========================================="
         )
 
+        traceback.print_exc()
+
         print(
-            str(e)
+            "==========================================\n"
         )
 
 
         return jsonify({
+
+            "success":
+                False,
 
             "error":
                 "Prediction failed",
@@ -479,6 +596,17 @@ def predict():
 # ==========================================
 
 if __name__ == "__main__":
+
+    # Railway automatically provides PORT.
+    # Local machine will use 5000.
+
+    port = int(
+        os.environ.get(
+            "PORT",
+            5000
+        )
+    )
+
 
     print(
         "\n=========================================="
@@ -497,15 +625,25 @@ if __name__ == "__main__":
     )
 
     print(
-        "http://localhost:5000"
+        f"http://localhost:{port}"
     )
+
 
     print(
         "\nPrediction API:"
     )
 
     print(
-        "http://localhost:5000/predict"
+        f"http://localhost:{port}/predict"
+    )
+
+
+    print(
+        "\nHealth API:"
+    )
+
+    print(
+        f"http://localhost:{port}/health"
     )
 
 
@@ -513,41 +651,15 @@ if __name__ == "__main__":
         "\nFeatures:"
     )
 
-    print(
-        "1. programming_level"
-    )
 
-    print(
-        "2. preferred_field"
-    )
+    for index, feature in enumerate(
+        FEATURES,
+        start=1
+    ):
 
-    print(
-        "3. tenth_marks"
-    )
-
-    print(
-        "4. twelfth_marks"
-    )
-
-    print(
-        "5. graduation_marks"
-    )
-
-    print(
-        "6. semester"
-    )
-
-    print(
-        "7. backlogs"
-    )
-
-    print(
-        "8. skill_score"
-    )
-
-    print(
-        "9. assessment_score"
-    )
+        print(
+            f"{index}. {feature}"
+        )
 
 
     print(
@@ -572,7 +684,7 @@ if __name__ == "__main__":
 
         host="0.0.0.0",
 
-        port=5000,
+        port=port,
 
         debug=True
 

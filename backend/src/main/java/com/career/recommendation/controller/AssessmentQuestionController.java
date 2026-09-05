@@ -3,30 +3,37 @@ package com.career.recommendation.controller;
 import java.util.List;
 
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
 import com.career.recommendation.model.AssessmentQuestion;
 import com.career.recommendation.service.AssessmentQuestionService;
 
 @RestController
 @RequestMapping("/api/assessment-questions")
-@CrossOrigin(origins = "http://localhost:5173")
 public class AssessmentQuestionController {
-
 
     private final AssessmentQuestionService service;
 
 
+    // =============================================
+    // CONSTRUCTOR
+    // =============================================
+
     public AssessmentQuestionController(
-            AssessmentQuestionService service) {
+            AssessmentQuestionService service
+    ) {
 
         this.service = service;
     }
 
 
-    // =====================================================
+    // =============================================
     // GET QUESTIONS BY STUDENT SKILLS
-    // =====================================================
+    // =============================================
 
     @PostMapping("/student/{studentId}")
     public ResponseEntity<List<AssessmentQuestion>>
@@ -34,12 +41,13 @@ public class AssessmentQuestionController {
 
             @PathVariable Long studentId,
 
-            @RequestBody List<String> skillNames) {
+            @RequestBody List<String> skillNames
+    ) {
 
 
-        // =================================================
-        // STUDENT ID CHECK
-        // =================================================
+        // =============================================
+        // VALIDATE STUDENT ID
+        // =============================================
 
         if (studentId == null) {
 
@@ -49,58 +57,76 @@ public class AssessmentQuestionController {
         }
 
 
-        // =================================================
-        // SKILLS CHECK
-        // =================================================
+        // =============================================
+        // VALIDATE SKILLS
+        // =============================================
 
         if (
-            skillNames == null ||
-            skillNames.isEmpty()
+                skillNames == null ||
+                skillNames.isEmpty()
         ) {
 
+            System.out.println(
+                    "No skills received."
+            );
+
             return ResponseEntity.ok(
-                List.of()
+                    List.of()
             );
         }
 
 
+        // =============================================
+        // DEBUG LOG
+        // =============================================
+
         System.out.println(
-            "================================"
+                "\n=========================================="
         );
 
         System.out.println(
-            "Student ID: " +
-            studentId
+                "ASSESSMENT QUESTIONS REQUEST"
         );
 
         System.out.println(
-            "Skills: " +
-            skillNames
+                "Student ID: " + studentId
+        );
+
+        System.out.println(
+                "Skills Received: " + skillNames
         );
 
 
-        // =================================================
-        // GET QUESTIONS
-        // =================================================
+        // =============================================
+        // GET QUESTIONS FROM SERVICE
+        // =============================================
 
         List<AssessmentQuestion> questions =
                 service.getQuestionsBySkills(
-                    skillNames
+                        skillNames
                 );
 
 
+        // =============================================
+        // DEBUG RESULT
+        // =============================================
+
         System.out.println(
-            "Questions Found: " +
-            questions.size()
+                "Total Questions Found: " +
+                questions.size()
         );
 
         System.out.println(
-            "================================"
+                "==========================================\n"
         );
 
+
+        // =============================================
+        // RETURN RESPONSE
+        // =============================================
 
         return ResponseEntity.ok(
-            questions
+                questions
         );
     }
 }

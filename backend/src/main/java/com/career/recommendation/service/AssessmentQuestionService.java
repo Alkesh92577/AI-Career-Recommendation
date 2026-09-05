@@ -2,10 +2,11 @@ package com.career.recommendation.service;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.HashMap;
 import java.util.Set;
 
 import org.springframework.stereotype.Service;
@@ -17,7 +18,6 @@ import com.career.recommendation.repository.AssessmentQuestionRepository;
 public class AssessmentQuestionService {
 
     private final AssessmentQuestionRepository repository;
-
 
     public AssessmentQuestionService(
             AssessmentQuestionRepository repository) {
@@ -38,384 +38,349 @@ public class AssessmentQuestionService {
         // VALIDATION
         // =================================================
 
-        if (
-            skillNames == null ||
-            skillNames.isEmpty()
-        ) {
+        if (skillNames == null || skillNames.isEmpty()) {
+
+            System.out.println("No skills received.");
 
             return new ArrayList<>();
         }
 
 
         // =================================================
-        // CLEAN SKILL NAMES
+        // CLEAN SKILLS
         // =================================================
 
-        List<String> cleanSkillNames =
-                skillNames.stream()
-
-                        .filter(
-                            skill ->
-                                skill != null &&
-                                !skill.trim().isEmpty()
-                        )
-
-                        .map(
-                            String::trim
-                        )
-
-                        .distinct()
-
-                        .toList();
+        List<String> cleanSkills = skillNames
+                .stream()
+                .filter(skill ->
+                        skill != null &&
+                        !skill.trim().isEmpty()
+                )
+                .map(skill ->
+                        skill.trim()
+                                .toLowerCase(Locale.ROOT)
+                )
+                .distinct()
+                .toList();
 
 
-        if (cleanSkillNames.isEmpty()) {
+        if (cleanSkills.isEmpty()) {
 
             return new ArrayList<>();
         }
 
 
-        System.out.println(
-            "=========================================="
-        );
+        // =================================================
+        // DEBUG
+        // =================================================
 
-        System.out.println(
-            "STUDENT SKILLS RECEIVED:"
-        );
+        System.out.println();
+        System.out.println("==========================================");
+        System.out.println("ASSESSMENT QUESTION SERVICE");
+        System.out.println("==========================================");
 
-        System.out.println(
-            cleanSkillNames
-        );
+        System.out.println("SKILLS RECEIVED:");
+        System.out.println(cleanSkills);
 
 
         // =================================================
-        // SKILL -> COURSE NAME MAPPING
+        // SKILL -> COURSE MAPPING
         // =================================================
 
         Map<String, String> skillCourseMap =
                 new HashMap<>();
 
 
-        // -------------------------------------------------
-        // PROGRAMMING
-        // -------------------------------------------------
+        // =================================================
+        // PROGRAMMING LANGUAGES
+        // =================================================
 
-        // IMPORTANT:
-        // Database me Java hai
-        // Database me Python hai
+        skillCourseMap.put("java", "java");
 
-        skillCourseMap.put(
-            "Java",
-            "Java"
-        );
+        skillCourseMap.put("python", "python");
 
-        skillCourseMap.put(
-            "Python",
-            "Python"
-        );
+        skillCourseMap.put("c", "c");
 
-        skillCourseMap.put(
-            "C",
-            "C"
-        );
+        skillCourseMap.put("c++", "c++");
 
-        skillCourseMap.put(
-            "C++",
-            "C++"
-        );
-
-        skillCourseMap.put(
-            "JavaScript",
-            "JavaScript"
-        );
+        skillCourseMap.put("javascript", "javascript");
 
 
-        // -------------------------------------------------
+        // =================================================
         // WEB DEVELOPMENT
-        // -------------------------------------------------
+        // =================================================
 
-        skillCourseMap.put(
-            "HTML",
-            "HTML"
-        );
+        skillCourseMap.put("html", "html");
 
-        skillCourseMap.put(
-            "CSS",
-            "CSS"
-        );
+        skillCourseMap.put("css", "css");
 
-        skillCourseMap.put(
-            "React",
-            "React"
-        );
+        skillCourseMap.put("react", "react");
 
-        skillCourseMap.put(
-            "Node.js",
-            "Node.js"
-        );
+        skillCourseMap.put("node.js", "node.js");
+
+        skillCourseMap.put("nodejs", "node.js");
 
 
-        // -------------------------------------------------
+        // =================================================
         // DATABASE
-        // -------------------------------------------------
+        // =================================================
+
+        skillCourseMap.put("sql", "sql");
+
+        skillCourseMap.put("mysql", "mysql");
+
+        skillCourseMap.put("mongodb", "mongodb");
+
+
+        // =================================================
+        // JAVA / BACKEND
+        // =================================================
+
+        skillCourseMap.put("spring boot", "spring boot");
 
         skillCourseMap.put(
-            "SQL",
-            "SQL"
-        );
-
-        skillCourseMap.put(
-            "MySQL",
-            "MySQL"
-        );
-
-        skillCourseMap.put(
-            "MongoDB",
-            "MongoDB"
-        );
-
-
-        // -------------------------------------------------
-        // JAVA BACKEND
-        // -------------------------------------------------
-
-        skillCourseMap.put(
-            "Spring Boot",
-            "Spring Boot"
-        );
-
-
-        // -------------------------------------------------
-        // DATA / AI
-        // -------------------------------------------------
-
-        skillCourseMap.put(
-            "Machine Learning",
-            "Machine Learning"
-        );
-
-        skillCourseMap.put(
-            "Deep Learning",
-            "Deep Learning"
-        );
-
-        skillCourseMap.put(
-            "Data Analysis",
-            "Python for Data Analysis"
-        );
-
-        skillCourseMap.put(
-            "Pandas and NumPy",
-            "Pandas and NumPy"
-        );
-
-        skillCourseMap.put(
-            "Power BI",
-            "Power BI"
-        );
-
-
-        // -------------------------------------------------
-        // PYTHON SPECIALIZATION
-        // -------------------------------------------------
-
-        skillCourseMap.put(
-            "Python for Data Analysis",
-            "Python for Data Analysis"
-        );
-
-        skillCourseMap.put(
-            "Python for Data Science",
-            "Python for Data Science"
-        );
-
-
-        // -------------------------------------------------
-        // DSA
-        // -------------------------------------------------
-
-        skillCourseMap.put(
-            "Data Structures and Algorithms",
-            "Data Structures and Algorithms"
-        );
-
-
-        // -------------------------------------------------
-        // CYBER SECURITY
-        // -------------------------------------------------
-
-        skillCourseMap.put(
-            "Cyber Security Fundamentals",
-            "Cyber Security Fundamentals"
-        );
-
-        skillCourseMap.put(
-            "Ethical Hacking",
-            "Ethical Hacking"
-        );
-
-
-        // -------------------------------------------------
-        // NETWORKING
-        // -------------------------------------------------
-
-        skillCourseMap.put(
-            "Networking Basics",
-            "Networking Basics"
+                "data structures and algorithms",
+                "data structures and algorithms"
         );
 
 
         // =================================================
-        // CONVERT STUDENT SKILLS -> COURSE NAMES
+        // DATA ANALYSIS
+        // =================================================
+
+        skillCourseMap.put(
+                "data analysis",
+                "data analysis"
+        );
+
+        skillCourseMap.put(
+                "python for data analysis",
+                "python for data analysis"
+        );
+
+        skillCourseMap.put(
+                "pandas and numpy",
+                "pandas and numpy"
+        );
+
+        skillCourseMap.put(
+                "power bi",
+                "power bi"
+        );
+
+
+        // =================================================
+        // DATA SCIENCE / AI
+        // =================================================
+
+        skillCourseMap.put(
+                "python for data science",
+                "python for data science"
+        );
+
+        skillCourseMap.put(
+                "machine learning",
+                "machine learning"
+        );
+
+        skillCourseMap.put(
+                "deep learning",
+                "deep learning"
+        );
+
+
+        // =================================================
+        // CYBER SECURITY
+        // =================================================
+
+        skillCourseMap.put(
+                "cyber security fundamentals",
+                "cyber security fundamentals"
+        );
+
+        skillCourseMap.put(
+                "ethical hacking",
+                "ethical hacking"
+        );
+
+        skillCourseMap.put(
+                "networking basics",
+                "networking basics"
+        );
+
+
+        // =================================================
+        // CREATE COURSE NAME LIST
         // =================================================
 
         Set<String> courseNames =
                 new LinkedHashSet<>();
 
 
-        for (
-            String skill :
-            cleanSkillNames
-        ) {
+        for (String skill : cleanSkills) {
 
-            String courseName =
-                    skillCourseMap.get(skill);
+            String normalizedSkill =
+                    skill.trim()
+                            .toLowerCase(Locale.ROOT);
 
 
-            // ------------------------------------------------
-            // MAPPING FOUND
-            // ------------------------------------------------
+            String mappedCourse =
+                    skillCourseMap.get(normalizedSkill);
 
-            if (
-                courseName != null &&
-                !courseName.trim().isEmpty()
-            ) {
+
+            // Mapping available
+            if (mappedCourse != null) {
 
                 courseNames.add(
-                    courseName
+                        mappedCourse
+                                .trim()
+                                .toLowerCase(Locale.ROOT)
                 );
 
                 System.out.println(
-                    "Skill: " +
-                    skill +
-                    " -> Course: " +
-                    courseName
+                        "Skill Mapping: " +
+                        normalizedSkill +
+                        " -> " +
+                        mappedCourse
                 );
-
             }
 
-
-            // ------------------------------------------------
-            // NO MAPPING
-            // USE EXACT SKILL NAME
-            // ------------------------------------------------
-
+            // No mapping
             else {
 
                 courseNames.add(
-                    skill
+                        normalizedSkill
                 );
 
                 System.out.println(
-                    "Skill: " +
-                    skill +
-                    " -> Exact Course: " +
-                    skill
+                        "Direct Skill Match: " +
+                        normalizedSkill
                 );
-
             }
-
         }
 
 
         // =================================================
-        // NO COURSE FOUND
+        // PRINT COURSE NAMES
         // =================================================
 
-        if (courseNames.isEmpty()) {
+        System.out.println();
+        System.out.println("COURSES TO SEARCH:");
 
-            System.out.println(
-                "No matching course names found."
-            );
-
-            return new ArrayList<>();
-        }
+        System.out.println(courseNames);
 
 
         // =================================================
-        // PRINT COURSES SEARCHED
+        // GET ALL QUESTIONS FROM DATABASE
         // =================================================
 
+        List<AssessmentQuestion> allQuestions =
+                repository.findAll();
+
+
+        System.out.println();
         System.out.println(
-            "COURSES SEARCHED:"
-        );
-
-        System.out.println(
-            courseNames
-        );
-
-
-        // =================================================
-        // DATABASE QUERY
-        // =================================================
-
-        List<AssessmentQuestion> questions =
-                repository.findByCourseNameIn(
-                    new ArrayList<>(
-                        courseNames
-                    )
-                );
-
-
-        // =================================================
-        // QUESTIONS FOUND
-        // =================================================
-
-        System.out.println(
-            "QUESTIONS FOUND: " +
-            questions.size()
+                "TOTAL QUESTIONS IN DATABASE: " +
+                allQuestions.size()
         );
 
 
         // =================================================
-        // PRINT QUESTION COURSE NAMES
+        // FILTER QUESTIONS
         // =================================================
+
+        List<AssessmentQuestion> matchedQuestions =
+                allQuestions
+                        .stream()
+
+                        .filter(question -> {
+
+                            if (
+                                    question.getCourseName() == null ||
+                                    question.getCourseName().trim().isEmpty()
+                            ) {
+
+                                return false;
+                            }
+
+
+                            String databaseCourseName =
+                                    question
+                                            .getCourseName()
+                                            .trim()
+                                            .toLowerCase(
+                                                    Locale.ROOT
+                                            );
+
+
+                            return courseNames.contains(
+                                    databaseCourseName
+                            );
+                        })
+
+                        .toList();
+
+
+        // =================================================
+        // DEBUG RESULT
+        // =================================================
+
+        System.out.println();
+        System.out.println(
+                "MATCHED QUESTIONS: " +
+                matchedQuestions.size()
+        );
+
 
         for (
-            AssessmentQuestion question :
-            questions
+                AssessmentQuestion question :
+                matchedQuestions
         ) {
 
             System.out.println(
-                "Question ID: " +
-                question.getId() +
-                " | Course: " +
-                question.getCourseName()
-            );
 
+                    "ID: " +
+                    question.getId() +
+
+                    " | Course: " +
+                    question.getCourseName() +
+
+                    " | Question: " +
+                    question.getQuestionText()
+            );
         }
 
 
         // =================================================
-        // RANDOM ORDER
+        // CREATE MUTABLE LIST
         // =================================================
 
-        List<AssessmentQuestion> shuffled =
+        List<AssessmentQuestion> shuffledQuestions =
                 new ArrayList<>(
-                    questions
+                        matchedQuestions
                 );
 
 
+        // =================================================
+        // RANDOMIZE QUESTIONS
+        // =================================================
+
         Collections.shuffle(
-            shuffled
+                shuffledQuestions
         );
 
+
+        System.out.println();
+        System.out.println("FINAL QUESTIONS:");
 
         System.out.println(
-            "=========================================="
+                shuffledQuestions.size()
         );
 
+        System.out.println("==========================================");
+        System.out.println();
 
-        return shuffled;
+
+        return shuffledQuestions;
     }
 }
