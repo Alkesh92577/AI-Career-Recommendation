@@ -4,12 +4,18 @@ import com.career.recommendation.dto.PredictionRequest;
 import com.career.recommendation.model.Prediction;
 import com.career.recommendation.repository.PredictionRepository;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.http.*;
 
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Service
 public class PredictionService {
@@ -18,9 +24,18 @@ public class PredictionService {
 
     private final RestTemplate restTemplate;
 
-    private final String FLASK_URL =
-            "http://localhost:5000/predict";
 
+    // =====================================================
+    // ML SERVICE URL
+    // =====================================================
+
+    @Value("${ml.service.url}")
+    private String mlServiceUrl;
+
+
+    // =====================================================
+    // CONSTRUCTOR
+    // =====================================================
 
     public PredictionService(
             PredictionRepository predictionRepository) {
@@ -41,6 +56,10 @@ public class PredictionService {
             PredictionRequest request) {
 
 
+        // =================================================
+        // VALIDATE REQUEST
+        // =================================================
+
         if (request == null) {
 
             throw new IllegalArgumentException(
@@ -58,7 +77,7 @@ public class PredictionService {
 
 
         // =================================================
-        // FLASK DATA
+        // CREATE ML REQUEST DATA
         // =================================================
 
         Map<String, Object> flaskData =
@@ -124,15 +143,27 @@ public class PredictionService {
         // =================================================
 
         System.out.println(
+                "\n===================================="
+        );
+
+        System.out.println(
+                "AI CAREER PREDICTION REQUEST"
+        );
+
+        System.out.println(
                 "===================================="
         );
 
         System.out.println(
-                "DATA SENT TO FLASK ML"
+                "ML SERVICE URL:"
         );
 
         System.out.println(
-                "===================================="
+                mlServiceUrl
+        );
+
+        System.out.println(
+                "\nDATA SENT TO ML SERVICE:"
         );
 
         System.out.println(
@@ -152,6 +183,10 @@ public class PredictionService {
         );
 
 
+        // =================================================
+        // HTTP ENTITY
+        // =================================================
+
         HttpEntity<Map<String, Object>> entity =
                 new HttpEntity<>(
                         flaskData,
@@ -160,23 +195,59 @@ public class PredictionService {
 
 
         // =================================================
-        // CALL FLASK
+        // CALL ML SERVICE
         // =================================================
 
-        ResponseEntity<Map> response =
-                restTemplate.postForEntity(
-                        FLASK_URL,
-                        entity,
-                        Map.class
-                );
+        ResponseEntity<Map> response;
 
+        try {
+
+            response =
+                    restTemplate.postForEntity(
+                            mlServiceUrl,
+                            entity,
+                            Map.class
+                    );
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "\n===================================="
+            );
+
+            System.out.println(
+                    "ML SERVICE CONNECTION ERROR"
+            );
+
+            System.out.println(
+                    "===================================="
+            );
+
+            System.out.println(
+                    e.getMessage()
+            );
+
+            throw new RuntimeException(
+                    "Unable to connect to AI/ML service: "
+                            + e.getMessage()
+            );
+        }
+
+
+        // =================================================
+        // DEBUG RESPONSE
+        // =================================================
 
         System.out.println(
-                "===================================="
+                "\n===================================="
         );
 
         System.out.println(
-                "FLASK RESPONSE"
+                "ML SERVICE RESPONSE"
+        );
+
+        System.out.println(
+                "===================================="
         );
 
         System.out.println(
@@ -188,6 +259,10 @@ public class PredictionService {
         );
 
 
+        // =================================================
+        // GET RESPONSE
+        // =================================================
+
         Map<String, Object> result =
                 response.getBody();
 
@@ -195,13 +270,13 @@ public class PredictionService {
         if (result == null) {
 
             throw new RuntimeException(
-                    "Received an empty response from Flask.."
+                    "Received an empty response from ML service."
             );
         }
 
 
         // =================================================
-        // CAREER
+        // GET CAREER
         // =================================================
 
         Object careerObject =
@@ -211,7 +286,7 @@ public class PredictionService {
         if (careerObject == null) {
 
             throw new RuntimeException(
-                    "Didn't find a career in Flask-Response.."
+                    "Career was not found in ML service response."
             );
         }
 
@@ -221,7 +296,7 @@ public class PredictionService {
 
 
         // =================================================
-        // CONFIDENCE
+        // GET CONFIDENCE
         // =================================================
 
         Double confidence = null;
@@ -241,15 +316,18 @@ public class PredictionService {
 
 
         // =================================================
-        // REASON
+        // CREATE REASON
         // =================================================
 
         String reason =
-                "Career recommendation generated using AI/ML model based on profile, academic performance, skills and assessment score.";
+                "Career recommendation generated using AI/ML "
+                        + "model based on programming knowledge, "
+                        + "preferred field, academic performance, "
+                        + "skills and assessment score.";
 
 
         // =================================================
-        // CREATE PREDICTION
+        // CREATE PREDICTION ENTITY
         // =================================================
 
         Prediction prediction =
@@ -282,13 +360,50 @@ public class PredictionService {
 
 
         // =================================================
-        // SAVE MYSQL
+        // SAVE PREDICTION IN MYSQL
         // =================================================
 
-        return predictionRepository.save(
-                prediction
+        Prediction savedPrediction =
+                predictionRepository.save(
+                        prediction
+                );
+
+
+        // =================================================
+        // SUCCESS DEBUG
+        // =================================================
+
+        System.out.println(
+                "\n===================================="
         );
 
+        System.out.println(
+                "PREDICTION SAVED SUCCESSFULLY"
+        );
+
+        System.out.println(
+                "===================================="
+        );
+
+        System.out.println(
+                "Prediction ID: "
+                        + savedPrediction.getId()
+        );
+
+        System.out.println(
+                "Career: "
+                        + savedPrediction
+                        .getRecommendedCareer()
+        );
+
+        System.out.println(
+                "Confidence: "
+                        + savedPrediction
+                        .getConfidence()
+        );
+
+
+        return savedPrediction;
     }
 
 
@@ -308,14 +423,27 @@ public class PredictionService {
 
 
     // =====================================================
-    // GET ALL
+    // GET LATEST STUDENT PREDICTION
+    // =====================================================
+
+    public Prediction getLatestStudentPrediction(
+            Long studentId) {
+
+        return predictionRepository
+                .findTopByStudentIdOrderByCreatedAtDesc(
+                        studentId
+                );
+    }
+
+
+    // =====================================================
+    // GET ALL PREDICTIONS
     // =====================================================
 
     public List<Prediction>
     getAllPredictions() {
 
-        return predictionRepository.findAll();
-
+        return predictionRepository
+                .findAll();
     }
-
 }

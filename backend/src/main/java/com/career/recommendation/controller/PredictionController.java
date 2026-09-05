@@ -25,21 +25,26 @@ public class PredictionController {
 
 
     // =====================================================
-    // PREDICT
+    // GENERATE AI CAREER PREDICTION
     // =====================================================
 
     @PostMapping("/predict")
     public ResponseEntity<Prediction> predict(
             @RequestBody PredictionRequest request) {
 
+        Prediction prediction =
+                predictionService.predict(
+                        request
+                );
+
         return ResponseEntity.ok(
-                predictionService.predict(request)
+                prediction
         );
     }
 
 
     // =====================================================
-    // STUDENT PREDICTIONS
+    // GET STUDENT PREDICTIONS
     // =====================================================
 
     @GetMapping("/student/{studentId}")
@@ -49,13 +54,15 @@ public class PredictionController {
 
         return ResponseEntity.ok(
                 predictionService
-                        .getStudentPredictions(studentId)
+                        .getStudentPredictions(
+                                studentId
+                        )
         );
     }
 
 
     // =====================================================
-    // ALL PREDICTIONS
+    // GET ALL PREDICTIONS
     // =====================================================
 
     @GetMapping
@@ -67,5 +74,4 @@ public class PredictionController {
                         .getAllPredictions()
         );
     }
-
 }

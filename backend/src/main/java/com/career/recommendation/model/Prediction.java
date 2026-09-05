@@ -1,6 +1,7 @@
 package com.career.recommendation.model;
 
 import jakarta.persistence.*;
+
 import java.time.LocalDateTime;
 
 @Entity
@@ -8,17 +9,24 @@ import java.time.LocalDateTime;
 public class Prediction {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @GeneratedValue(
+            strategy = GenerationType.IDENTITY
+    )
     private Long id;
+
 
     private Long studentId;
 
+
     private String recommendedCareer;
+
 
     private Double confidence;
 
+
     @Column(length = 1000)
     private String reason;
+
 
     private LocalDateTime createdAt;
 
@@ -28,26 +36,33 @@ public class Prediction {
 
 
     public Long getId() {
+
         return id;
     }
 
 
-    public void setId(Long id) {
+    public void setId(
+            Long id) {
+
         this.id = id;
     }
 
 
     public Long getStudentId() {
+
         return studentId;
     }
 
 
-    public void setStudentId(Long studentId) {
+    public void setStudentId(
+            Long studentId) {
+
         this.studentId = studentId;
     }
 
 
     public String getRecommendedCareer() {
+
         return recommendedCareer;
     }
 
@@ -61,6 +76,7 @@ public class Prediction {
 
 
     public Double getConfidence() {
+
         return confidence;
     }
 
@@ -74,6 +90,7 @@ public class Prediction {
 
 
     public String getReason() {
+
         return reason;
     }
 
@@ -87,6 +104,7 @@ public class Prediction {
 
 
     public LocalDateTime getCreatedAt() {
+
         return createdAt;
     }
 
