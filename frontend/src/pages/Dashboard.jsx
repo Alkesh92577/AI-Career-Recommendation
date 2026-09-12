@@ -9,7 +9,7 @@ import interestAssessmentService from "../services/interestAssessmentService";
 import { getBestCareer } from "../utils/careerRecommendation";
 
 const API_BASE =
-  "http://ai-career-recommendation-production.up.railway.app/api";
+"https://ai-career-backend-vj8d.onrender.com/api";
 
 const PREDICTION_API = `${API_BASE}/predictions`;
 const DASHBOARD_API = `${API_BASE}/dashboard`;
