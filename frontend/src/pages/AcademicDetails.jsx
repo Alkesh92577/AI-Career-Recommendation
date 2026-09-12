@@ -1,26 +1,25 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
 import studentService from "../services/studentService";
 
 function AcademicDetails() {
 
-  const navigate = useNavigate();
-
-
   // ==========================================
-  // ACADEMIC FORM
+  // DEFAULT ACADEMIC DATA
   // ==========================================
 
-  const [academic, setAcademic] = useState({
-
+  const emptyAcademic = {
     tenthMarks: "",
     twelfthMarks: "",
     graduationMarks: "",
     semester: "",
     backlogs: ""
+  };
 
-  });
+  // ==========================================
+  // ACADEMIC FORM
+  // ==========================================
 
+  const [academic, setAcademic] = useState(emptyAcademic);
 
   // ==========================================
   // STUDENT ID
@@ -28,24 +27,19 @@ function AcademicDetails() {
 
   const [studentId, setStudentId] = useState(null);
 
-
   // ==========================================
-  // LOADING
+  // LOADING / SAVING
   // ==========================================
 
   const [loading, setLoading] = useState(true);
-
   const [saving, setSaving] = useState(false);
-
 
   // ==========================================
   // MESSAGE
   // ==========================================
 
   const [message, setMessage] = useState("");
-
   const [messageType, setMessageType] = useState("");
-
 
   // ==========================================
   // MESSAGE TIMER
@@ -53,47 +47,46 @@ function AcademicDetails() {
 
   const messageTimer = useRef(null);
 
+  // ==========================================
+  // GET USER ID
+  // ==========================================
+
+  const getUserId = () => {
+    return localStorage.getItem("userId");
+  };
 
   // ==========================================
-  // SHOW MESSAGE FOR 3 SECONDS
+  // USER-SPECIFIC LOCAL STORAGE KEY
+  // ==========================================
+
+  const getAcademicStorageKey = (userId) => {
+    return `academicDetails_${userId}`;
+  };
+
+  // ==========================================
+  // SHOW MESSAGE
   // ==========================================
 
   const showMessage = (text, type) => {
 
-    // Agar pehle se koi timer chal raha hai
-    // to usko clear karo
-
     if (messageTimer.current) {
-
       clearTimeout(messageTimer.current);
-
     }
 
-
-    // Message show karo
-
     setMessage(text);
-
     setMessageType(type);
-
-
-    // 3 seconds baad automatically hide
 
     messageTimer.current = setTimeout(() => {
 
       setMessage("");
-
       setMessageType("");
-
       messageTimer.current = null;
 
     }, 3000);
-
   };
 
-
   // ==========================================
-  // CLEAR TIMER WHEN PAGE CLOSES
+  // CLEANUP TIMER
   // ==========================================
 
   useEffect(() => {
@@ -101,26 +94,160 @@ function AcademicDetails() {
     return () => {
 
       if (messageTimer.current) {
-
         clearTimeout(messageTimer.current);
-
       }
 
     };
 
   }, []);
 
+  // ==========================================
+  // SAVE ACADEMIC DATA LOCALLY
+  // ==========================================
+
+  const saveAcademicLocally = (
+    userId,
+    academicData
+  ) => {
+
+    try {
+
+      localStorage.setItem(
+        getAcademicStorageKey(userId),
+        JSON.stringify(academicData)
+      );
+
+      console.log(
+        "Academic details saved locally:",
+        academicData
+      );
+
+    } catch (error) {
+
+      console.error(
+        "LOCAL ACADEMIC SAVE ERROR:",
+        error
+      );
+
+    }
+  };
 
   // ==========================================
-  // GET USER ID
+  // LOAD ACADEMIC DATA FROM LOCAL STORAGE
   // ==========================================
 
-  const getUserId = () => {
+  const loadAcademicLocally = (userId) => {
 
-    return localStorage.getItem("userId");
+    try {
+
+      const saved =
+        localStorage.getItem(
+          getAcademicStorageKey(userId)
+        );
+
+      if (!saved) {
+        return null;
+      }
+
+      const parsed =
+        JSON.parse(saved);
+
+      if (
+        !parsed ||
+        typeof parsed !== "object"
+      ) {
+
+        return null;
+
+      }
+
+      return {
+
+        tenthMarks:
+          parsed.tenthMarks ?? "",
+
+        twelfthMarks:
+          parsed.twelfthMarks ?? "",
+
+        graduationMarks:
+          parsed.graduationMarks ?? "",
+
+        semester:
+          parsed.semester ?? "",
+
+        backlogs:
+          parsed.backlogs ?? ""
+
+      };
+
+    } catch (error) {
+
+      console.error(
+        "LOCAL ACADEMIC LOAD ERROR:",
+        error
+      );
+
+      return null;
+    }
+  };
+
+  // ==========================================
+  // NORMALIZE BACKEND DATA
+  // ==========================================
+
+  const normalizeAcademicData = (data) => {
+
+    return {
+
+      tenthMarks:
+        data?.tenthMarks ?? "",
+
+      twelfthMarks:
+        data?.twelfthMarks ?? "",
+
+      graduationMarks:
+        data?.graduationMarks ?? "",
+
+      semester:
+        data?.semester ?? "",
+
+      backlogs:
+        data?.backlogs ?? ""
+
+    };
 
   };
 
+  // ==========================================
+  // CHECK WHETHER ACADEMIC DATA EXISTS
+  // ==========================================
+
+  const hasAcademicData = (data) => {
+
+    if (!data) {
+      return false;
+    }
+
+    return (
+
+      data.tenthMarks !== null &&
+      data.tenthMarks !== undefined &&
+
+      data.twelfthMarks !== null &&
+      data.twelfthMarks !== undefined &&
+
+      data.graduationMarks !== null &&
+      data.graduationMarks !== undefined &&
+
+      data.semester !== null &&
+      data.semester !== undefined &&
+
+      data.backlogs !== null &&
+      data.backlogs !== undefined
+
+    );
+
+  };
 
   // ==========================================
   // LOAD ACADEMIC DETAILS
@@ -128,16 +255,16 @@ function AcademicDetails() {
 
   useEffect(() => {
 
+    let mounted = true;
+
     const loadAcademicDetails = async () => {
 
       const userId = getUserId();
-
 
       console.log(
         "Academic Details - Logged-in User ID:",
         userId
       );
-
 
       // ======================================
       // USER ID CHECK
@@ -145,65 +272,119 @@ function AcademicDetails() {
 
       if (!userId) {
 
-        showMessage(
-          "User not found. Please login again.",
-          "error"
-        );
+        if (mounted) {
 
-        setLoading(false);
+          showMessage(
+            "User not found. Please login again.",
+            "error"
+          );
+
+          setLoading(false);
+
+        }
 
         return;
-
       }
 
+      // ======================================
+      // LOAD LOCAL BACKUP FIRST
+      // ======================================
+
+      const localAcademic =
+        loadAcademicLocally(userId);
+
+      if (
+        localAcademic &&
+        mounted
+      ) {
+
+        console.log(
+          "Academic details loaded from local backup:",
+          localAcademic
+        );
+
+        setAcademic(
+          localAcademic
+        );
+      }
+
+      // ======================================
+      // LOAD FROM BACKEND
+      // ======================================
 
       try {
 
-        // ====================================
-        // GET STUDENT PROFILE
-        // ====================================
-
         const data =
-          await studentService.getByUserId(userId);
-
+          await studentService.getByUserId(
+            userId
+          );
 
         console.log(
-          "Student Profile:",
+          "Student Profile From Backend:",
           data
         );
 
+        if (!mounted) {
+          return;
+        }
 
-        if (data) {
+        if (data && data.id) {
 
-          // ================================
+          // ==================================
           // SAVE STUDENT ID
-          // ================================
+          // ==================================
 
           setStudentId(data.id);
 
+          localStorage.setItem(
+            "studentId",
+            String(data.id)
+          );
 
-          // ================================
-          // LOAD ACADEMIC DETAILS
-          // ================================
+          // ==================================
+          // GET ACADEMIC DATA
+          // ==================================
 
-          setAcademic({
+          const backendAcademic =
+            normalizeAcademicData(data);
 
-            tenthMarks:
-              data.tenthMarks ?? "",
+          // ==================================
+          // BACKEND DATA EXISTS
+          // ==================================
 
-            twelfthMarks:
-              data.twelfthMarks ?? "",
+          if (
+            hasAcademicData(data)
+          ) {
 
-            graduationMarks:
-              data.graduationMarks ?? "",
+            setAcademic(
+              backendAcademic
+            );
 
-            semester:
-              data.semester ?? "",
+            // Keep local backup updated
+            saveAcademicLocally(
+              userId,
+              backendAcademic
+            );
 
-            backlogs:
-              data.backlogs ?? ""
+          }
 
-          });
+          // ==================================
+          // BACKEND DATA EMPTY BUT LOCAL DATA
+          // ==================================
+
+          else if (
+            localAcademic
+          ) {
+
+            console.log(
+              "Backend academic data empty. Using local backup."
+            );
+
+            setAcademic(
+              localAcademic
+            );
+
+          }
 
         }
 
@@ -214,40 +395,67 @@ function AcademicDetails() {
           error
         );
 
-
         // ==================================
-        // PROFILE NOT FOUND
+        // LOCAL BACKUP FALLBACK
         // ==================================
 
-        if (error.response?.status === 404) {
+        if (
+          localAcademic &&
+          mounted
+        ) {
 
-          showMessage(
-            "Complete your profile first.",
-            "error"
+          console.log(
+            "Backend unavailable. Using local academic backup."
           );
 
-        } else {
+          setAcademic(
+            localAcademic
+          );
 
           showMessage(
-            "Academic details are not loading.",
-            "error"
+            "Saved academic details loaded.",
+            "success"
           );
+
+        } else if (mounted) {
+
+          if (
+            error.response?.status === 404
+          ) {
+
+            showMessage(
+              "Complete your profile first.",
+              "error"
+            );
+
+          } else {
+
+            showMessage(
+              "Academic details are not loading.",
+              "error"
+            );
+
+          }
 
         }
 
       } finally {
 
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+        }
 
       }
 
     };
 
-
     loadAcademicDetails();
 
-  }, []);
+    return () => {
+      mounted = false;
+    };
 
+  }, []);
 
   // ==========================================
   // HANDLE INPUT
@@ -260,7 +468,6 @@ function AcademicDetails() {
       value
     } = e.target;
 
-
     setAcademic((previousAcademic) => ({
 
       ...previousAcademic,
@@ -271,7 +478,6 @@ function AcademicDetails() {
 
   };
 
-
   // ==========================================
   // SAVE ACADEMIC DETAILS
   // ==========================================
@@ -280,29 +486,17 @@ function AcademicDetails() {
 
     e.preventDefault();
 
-
     setSaving(true);
 
-
-    // Purana message clear karo
-
     setMessage("");
-
     setMessageType("");
 
-
-    // ========================================
-    // GET USER ID
-    // ========================================
-
     const userId = getUserId();
-
 
     console.log(
       "Saving Academic Details For User ID:",
       userId
     );
-
 
     // ========================================
     // USER ID CHECK
@@ -311,34 +505,62 @@ function AcademicDetails() {
     if (!userId) {
 
       showMessage(
-        "User ID not found. Please login again..",
+        "User ID not found. Please login again.",
         "error"
       );
 
       setSaving(false);
 
       return;
+    }
+
+    // ========================================
+    // STUDENT ID
+    // ========================================
+
+    let currentStudentId =
+      studentId;
+
+    // ========================================
+    // IF STATE DOES NOT HAVE STUDENT ID,
+    // GET IT FROM LOCAL STORAGE
+    // ========================================
+
+    if (!currentStudentId) {
+
+      const savedStudentId =
+        localStorage.getItem(
+          "studentId"
+        );
+
+      if (savedStudentId) {
+
+        currentStudentId =
+          Number(savedStudentId);
+
+        setStudentId(
+          currentStudentId
+        );
+
+      }
 
     }
 
-
     // ========================================
-    // STUDENT ID CHECK
+    // STILL NO STUDENT ID
     // ========================================
 
-    if (!studentId) {
+    if (!currentStudentId) {
 
       showMessage(
-        "Student profile not found. Save the profile first..",
+        "Student profile not found. Save the profile first.",
         "error"
       );
 
       setSaving(false);
 
       return;
-
     }
-
 
     // ========================================
     // PREPARE DATA
@@ -373,65 +595,73 @@ function AcademicDetails() {
 
     };
 
-
     console.log(
       "Academic Data Sending:",
       academicData
     );
 
-
     try {
 
       // ======================================
-      // UPDATE ACADEMIC DETAILS
+      // SAVE TO BACKEND / MYSQL
       // ======================================
 
       const data =
         await studentService.updateAcademic(
-          studentId,
+          currentStudentId,
           academicData
         );
-
 
       console.log(
         "Academic Backend Response:",
         data
       );
 
+      // ======================================
+      // USE BACKEND RESPONSE
+      // ======================================
+
+      const updatedAcademic =
+        normalizeAcademicData(data);
+
+      setAcademic(
+        updatedAcademic
+      );
 
       // ======================================
-      // UPDATE FORM WITH RESPONSE
+      // SAVE LOCAL BACKUP
       // ======================================
 
-      setAcademic({
-
-        tenthMarks:
-          data.tenthMarks ?? "",
-
-        twelfthMarks:
-          data.twelfthMarks ?? "",
-
-        graduationMarks:
-          data.graduationMarks ?? "",
-
-        semester:
-          data.semester ?? "",
-
-        backlogs:
-          data.backlogs ?? ""
-
-      });
-
+      saveAcademicLocally(
+        userId,
+        updatedAcademic
+      );
 
       // ======================================
-      // SUCCESS MESSAGE
+      // SAVE STUDENT ID
+      // ======================================
+
+      if (data?.id) {
+
+        setStudentId(
+          data.id
+        );
+
+        localStorage.setItem(
+          "studentId",
+          String(data.id)
+        );
+
+      }
+
+      // ======================================
+      // SUCCESS
       // ======================================
 
       showMessage(
         "Academic details successfully saved!",
         "success"
       );
-
 
     } catch (error) {
 
@@ -440,31 +670,33 @@ function AcademicDetails() {
         error
       );
 
-
       console.error(
         "Backend Response:",
         error.response?.data
       );
 
+      // ======================================
+      // BACKEND FAIL
+      // SAVE LOCAL BACKUP
+      // ======================================
+
+      saveAcademicLocally(
+        userId,
+        academic
+      );
 
       const backendMessage =
         error.response?.data?.message ||
         error.response?.data?.error;
 
-
-      // ======================================
-      // ERROR MESSAGE
-      // ======================================
-
       showMessage(
 
         backendMessage ||
-        "Academic details are not being saved. Please check the backend.",
+        "Internet/backend problem. Academic details have been saved locally.",
 
         "error"
 
       );
-
 
     } finally {
 
@@ -473,7 +705,6 @@ function AcademicDetails() {
     }
 
   };
-
 
   // ==========================================
   // LOADING SCREEN
@@ -499,7 +730,6 @@ function AcademicDetails() {
 
   }
 
-
   // ==========================================
   // UI
   // ==========================================
@@ -508,10 +738,7 @@ function AcademicDetails() {
 
     <div className="page-container">
 
-
-      {/* ==================================== */}
       {/* PAGE HEADER */}
-      {/* ==================================== */}
 
       <div className="page-header">
 
@@ -520,35 +747,26 @@ function AcademicDetails() {
         </h1>
 
         <p>
-         Complete your academic information.
+          Complete your academic information.
         </p>
 
       </div>
 
-
-      {/* ==================================== */}
       {/* FORM */}
-      {/* ==================================== */}
 
       <div className="form-card profile-form-card">
 
-
         <form onSubmit={handleSubmit}>
-
 
           <div className="form-grid">
 
-
-            {/* ================================= */}
             {/* 10TH */}
-            {/* ================================= */}
 
             <div>
 
               <label>
                 10th Percentage
               </label>
-
 
               <input
                 type="number"
@@ -564,17 +782,13 @@ function AcademicDetails() {
 
             </div>
 
-
-            {/* ================================= */}
             {/* 12TH */}
-            {/* ================================= */}
 
             <div>
 
               <label>
                 12th Percentage
               </label>
-
 
               <input
                 type="number"
@@ -590,17 +804,13 @@ function AcademicDetails() {
 
             </div>
 
-
-            {/* ================================= */}
             {/* GRADUATION */}
-            {/* ================================= */}
 
             <div>
 
               <label>
                 Graduation Percentage
               </label>
-
 
               <input
                 type="number"
@@ -616,17 +826,13 @@ function AcademicDetails() {
 
             </div>
 
-
-            {/* ================================= */}
             {/* SEMESTER */}
-            {/* ================================= */}
 
             <div>
 
               <label>
                 Current Semester
               </label>
-
 
               <input
                 type="number"
@@ -641,17 +847,13 @@ function AcademicDetails() {
 
             </div>
 
-
-            {/* ================================= */}
             {/* BACKLOGS */}
-            {/* ================================= */}
 
             <div>
 
               <label>
                 Backlogs
               </label>
-
 
               <input
                 type="number"
@@ -665,13 +867,9 @@ function AcademicDetails() {
 
             </div>
 
-
           </div>
 
-
-          {/* ================================= */}
           {/* SAVE BUTTON */}
-          {/* ================================= */}
 
           <button
             type="submit"
@@ -681,14 +879,12 @@ function AcademicDetails() {
 
             {saving
               ? "Saving Academic Details..."
-              : "Save Academic Details →"}
+              : "Save Academic Details →"
+            }
 
           </button>
 
-
-          {/* ================================= */}
           {/* MESSAGE */}
-          {/* ================================= */}
 
           {message && (
 
@@ -699,21 +895,12 @@ function AcademicDetails() {
                   : "error-message"
               }
             >
-
               {message}
-
             </p>
 
           )}
 
-
         </form>
-
-
-        {/* ================================= */}
-        {/* BACK TO PROFILE */}
-        {/* ================================= */}
-
 
       </div>
 
@@ -722,6 +909,5 @@ function AcademicDetails() {
   );
 
 }
-
 
 export default AcademicDetails;

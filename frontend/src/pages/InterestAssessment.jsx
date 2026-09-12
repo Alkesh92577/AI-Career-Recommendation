@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import studentService from "../services/studentService";
 import interestAssessmentService from "../services/interestAssessmentService";
 
-
 // =====================================================
 // INTEREST QUESTIONS
 // =====================================================

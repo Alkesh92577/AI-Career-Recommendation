@@ -2,7 +2,7 @@ import {
   BrowserRouter,
   Routes,
   Route,
-  Navigate
+  Navigate,
 } from "react-router-dom";
 
 import Login from "./pages/Login";
@@ -18,18 +18,15 @@ import CareerRoadmap from "./pages/CareerRoadmap";
 import Courses from "./pages/Courses";
 import CareerReport from "./pages/CareerReport";
 
+import Layout from "./components/Layout";
 
 function App() {
-
   return (
-
     <BrowserRouter>
 
       <Routes>
 
-        {/* ================================= */}
-        {/* DEFAULT PAGE */}
-        {/* ================================= */}
+        {/* DEFAULT */}
 
         <Route
           path="/"
@@ -41,125 +38,103 @@ function App() {
           }
         />
 
-
-        {/* ================================= */}
-        {/* AUTHENTICATION */}
-        {/* ================================= */}
+        {/* AUTH */}
 
         <Route
           path="/register"
-          element={<Register />}
+          element={
+            <Register />
+          }
         />
 
         <Route
           path="/login"
-          element={<Login />}
+          element={
+            <Login />
+          }
         />
 
-
-        {/* ================================= */}
-        {/* DASHBOARD */}
-        {/* ================================= */}
+        {/* MAIN APPLICATION */}
 
         <Route
-          path="/dashboard"
-          element={<Dashboard />}
-        />
+          element={
+            <Layout />
+          }
+        >
 
+          <Route
+            path="/dashboard"
+            element={
+              <Dashboard />
+            }
+          />
 
-        {/* ================================= */}
-        {/* PROFILE */}
-        {/* ================================= */}
+          <Route
+            path="/profile"
+            element={
+              <Profile />
+            }
+          />
 
-        <Route
-          path="/profile"
-          element={<Profile />}
-        />
+          <Route
+            path="/academic-details"
+            element={
+              <AcademicDetails />
+            }
+          />
 
+          <Route
+            path="/skills"
+            element={
+              <Skills />
+            }
+          />
 
-        {/* ================================= */}
-        {/* ACADEMIC DETAILS */}
-        {/* ================================= */}
+          <Route
+            path="/interest-assessment"
+            element={
+              <InterestAssessment />
+            }
+          />
 
-        <Route
-          path="/academic-details"
-          element={<AcademicDetails />}
-        />
+          <Route
+            path="/skill-assessment"
+            element={
+              <SkillAssessment />
+            }
+          />
 
+          <Route
+            path="/ai-prediction"
+            element={
+              <Prediction />
+            }
+          />
 
-        {/* ================================= */}
-        {/* SKILLS */}
-        {/* ================================= */}
+          <Route
+            path="/career-roadmap"
+            element={
+              <CareerRoadmap />
+            }
+          />
 
-        <Route
-          path="/skills"
-          element={<Skills />}
-        />
+          <Route
+            path="/courses"
+            element={
+              <Courses />
+            }
+          />
 
+          <Route
+            path="/career-report"
+            element={
+              <CareerReport />
+            }
+          />
 
-        {/* ================================= */}
-        {/* INTEREST ASSESSMENT */}
-        {/* ================================= */}
+        </Route>
 
-        <Route
-          path="/interest-assessment"
-          element={<InterestAssessment />}
-        />
-
-
-        {/* ================================= */}
-        {/* SKILL ASSESSMENT */}
-        {/* ================================= */}
-
-        <Route
-          path="/skill-assessment"
-          element={<SkillAssessment />}
-        />
-
-
-        {/* ================================= */}
-        {/* AI PREDICTION */}
-        {/* ================================= */}
-
-        <Route
-          path="/ai-prediction"
-          element={<Prediction />}
-        />
-
-
-        {/* ================================= */}
-        {/* CAREER ROADMAP */}
-        {/* ================================= */}
-
-        <Route
-          path="/career-roadmap"
-          element={<CareerRoadmap />}
-        />
-
-
-        {/* ================================= */}
-        {/* COURSES */}
-        {/* ================================= */}
-
-        <Route
-          path="/courses"
-          element={<Courses />}
-        />
-
-
-        {/* ================================= */}
-        {/* CAREER REPORT */}
-        {/* ================================= */}
-
-        <Route
-          path="/career-report"
-          element={<CareerReport />}
-        />
-
-
-        {/* ================================= */}
-        {/* UNKNOWN URL */}
-        {/* ================================= */}
+        {/* UNKNOWN */}
 
         <Route
           path="*"
@@ -174,9 +149,7 @@ function App() {
       </Routes>
 
     </BrowserRouter>
-
   );
 }
-
 
 export default App;

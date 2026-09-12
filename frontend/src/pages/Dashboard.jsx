@@ -3,1611 +3,716 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 import studentService from "../services/studentService";
+import skillService from "../services/skillService";
 import interestAssessmentService from "../services/interestAssessmentService";
 
-// =====================================================
-// API
-// =====================================================
+import { getBestCareer } from "../utils/careerRecommendation";
 
-const PREDICTION_API =
-  "http://ai-career-recommendation-production.up.railway.app/api/predictions";
+const API_BASE =
+  "http://ai-career-recommendation-production.up.railway.app/api";
 
-// =====================================================
-// COMPONENT
-// =====================================================
+const PREDICTION_API = `${API_BASE}/predictions`;
+const DASHBOARD_API = `${API_BASE}/dashboard`;
 
 function Dashboard() {
-
   const navigate = useNavigate();
 
-  // =====================================================
-  // USER DATA
-  // =====================================================
+  const [userName, setUserName] = useState("Student");
+  const [interestResult, setInterestResult] = useState(null);
+  const [predictionResult, setPredictionResult] = useState(null);
 
-  const [userName, setUserName] = useState("");
-  const [userEmail, setUserEmail] = useState("");
-  const [userRole, setUserRole] = useState("");
+  // ==========================================================
+  // SKILL BASED CAREER RECOMMENDATION
+  // ==========================================================
 
-  // =====================================================
-  // INTEREST TEST RESULT
-  // =====================================================
+  const [skillCareerResult, setSkillCareerResult] = useState(null);
 
-  const [interestResult, setInterestResult] =
-    useState(null);
+  const [dashboardData, setDashboardData] = useState({
+    studentId: null,
+    studentName: "Student",
+    profileCompletion: 0,
+    skillsCount: 0,
+  });
 
-  // =====================================================
-  // AI PREDICTION RESULT
-  // =====================================================
+  const [loading, setLoading] = useState(true);
 
-  const [predictionResult, setPredictionResult] =
-    useState(null);
+  // ==========================================================
+  // NAVIGATION
+  // ==========================================================
 
-  // =====================================================
-  // DASHBOARD DATA
-  // =====================================================
-
-  const [dashboardData, setDashboardData] =
-    useState({
-
-      studentId: null,
-
-      studentName: "Student",
-
-      profileCompletion: 0,
-
-      skillsCount: 0,
-
-      recommendedCareer: "Not Generated",
-
-      confidence: 0,
-
-      totalRoadmapSteps: 0,
-
-      completedRoadmapSteps: 0,
-
-      roadmapProgress: 0
-
-    });
-
-  // =====================================================
-  // LOADING
-  // =====================================================
-
-  const [loading, setLoading] =
-    useState(true);
-
-  // =====================================================
-  // GET USER ID
-  // =====================================================
-
-  const getUserId = () => {
-
-    return localStorage.getItem(
-      "userId"
-    );
-
+  const goToPage = (path) => {
+    navigate(path);
   };
 
-  // =====================================================
-  // GET LATEST AI PREDICTION
-  // =====================================================
-
-  const loadLatestPrediction = async (
-    studentId
-  ) => {
-
-    try {
-
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "LOADING AI PREDICTION"
-      );
-
-      console.log(
-        "STUDENT ID:",
-        studentId
-      );
-
-      console.log(
-        "===================================="
-      );
-
-      // =================================================
-      // STEP 1
-      // CHECK LOCALSTORAGE FIRST
-      // =================================================
-      //
-      // Prediction.jsx me:
-      //
-      // localStorage.setItem(
-      //     "latestPrediction",
-      //     JSON.stringify(finalPrediction)
-      // );
-      //
-      // Isliye Dashboard pehle wahi exact result
-      // read karega.
-      //
-      // =================================================
-
-      const savedPrediction =
-        localStorage.getItem(
-          "latestPrediction"
-        );
-
-      if (savedPrediction) {
-
-        try {
-
-          const parsedPrediction =
-            JSON.parse(
-              savedPrediction
-            );
-
-          console.log(
-            "LOCALSTORAGE AI PREDICTION:",
-            parsedPrediction
-          );
-
-          // =================================================
-          // CAREER
-          // =================================================
-
-          const localCareer =
-            parsedPrediction.recommendedCareer ||
-            parsedPrediction.career ||
-            parsedPrediction.predictedCareer ||
-            parsedPrediction.careerName ||
-            "";
-
-          // =================================================
-          // CONFIDENCE
-          // =================================================
-
-          let localConfidence =
-            parsedPrediction.confidence;
-
-          if (
-            localConfidence !== null &&
-            localConfidence !== undefined &&
-            localConfidence !== ""
-          ) {
-
-            localConfidence =
-              Number(
-                localConfidence
-              );
-
-            // Backend / AI agar 0.465 format me de
-
-            if (
-              localConfidence > 0 &&
-              localConfidence <= 1
-            ) {
-
-              localConfidence =
-                localConfidence * 100;
-
-            }
-
-            localConfidence =
-              Math.round(
-                localConfidence * 100
-              ) / 100;
-
-          } else {
-
-            localConfidence = 0;
-
-          }
-
-          // =================================================
-          // VALID LOCAL RESULT
-          // =================================================
-
-          if (
-            localCareer &&
-            String(
-              localCareer
-            ).trim() !== ""
-          ) {
-
-            const finalLocalPrediction = {
-
-              id:
-                parsedPrediction.id ||
-                null,
-
-              recommendedCareer:
-                String(
-                  localCareer
-                ).trim(),
-
-              confidence:
-                localConfidence,
-
-              reason:
-                parsedPrediction.reason ||
-                "",
-
-              createdAt:
-                parsedPrediction.createdAt ||
-                null
-
-            };
-
-            console.log(
-              "===================================="
-            );
-
-            console.log(
-              "USING EXACT AI RESULT FROM LOCALSTORAGE"
-            );
-
-            console.log(
-              "CAREER:",
-              finalLocalPrediction.recommendedCareer
-            );
-
-            console.log(
-              "CONFIDENCE:",
-              finalLocalPrediction.confidence
-            );
-
-            console.log(
-              "===================================="
-            );
-
-            setPredictionResult(
-              finalLocalPrediction
-            );
-
-            // =================================================
-            // IMPORTANT
-            // =================================================
-            //
-            // LocalStorage ka latest result mil gaya.
-            // Backend ke purane result ko use nahi karna.
-            //
-            // =================================================
-
-            return;
-
-          }
-
-        } catch (localError) {
-
-          console.error(
-            "LOCALSTORAGE PREDICTION PARSE ERROR:",
-            localError
-          );
-
-        }
-
-      }
-
-      // =================================================
-      // STEP 2
-      // LOCALSTORAGE RESULT NAHI MILA
-      // BACKEND SE LOAD KARO
-      // =================================================
-
-      console.log(
-        "LocalStorage prediction not found."
-      );
-
-      console.log(
-        "Backend prediction is loading..."
-      );
-
-      const response =
-        await axios.get(
-          `${PREDICTION_API}/student/${studentId}`
-        );
-
-      let predictions =
-        response.data;
-
-      console.log(
-        "ALL AI PREDICTIONS FROM BACKEND:",
-        predictions
-      );
-
-      // =================================================
-      // ARRAY / OBJECT CHECK
-      // =================================================
-
-      if (
-        Array.isArray(
-          predictions
-        )
-      ) {
-
-        // Already array
-
-      } else if (
-        predictions &&
-        typeof predictions === "object"
-      ) {
-
-        // Single prediction object
-
-        predictions = [
-          predictions
-        ];
-
-      } else {
-
-        predictions = [];
-
-      }
-
-      // =================================================
-      // NO PREDICTION
-      // =================================================
-
-      if (
-        predictions.length === 0
-      ) {
-
-        console.log(
-          "AI Prediction is not available.."
-        );
-
-        setPredictionResult(
-          null
-        );
-
-        return;
-
-      }
-
-      // =================================================
-      // SORT BY ID
-      // =================================================
-      //
-      // Higher ID = latest database record
-      //
-      // =================================================
-
-      const sortedPredictions =
-        [...predictions].sort(
-          (a, b) =>
-            Number(
-              b.id || 0
-            ) -
-            Number(
-              a.id || 0
-            )
-        );
-
-      // =================================================
-      // LATEST BACKEND PREDICTION
-      // =================================================
-
-      const latestPrediction =
-        sortedPredictions[0];
-
-      console.log(
-        "LATEST BACKEND AI PREDICTION:",
-        latestPrediction
-      );
-
-      // =================================================
-      // CAREER
-      // =================================================
-
-      const career =
-        latestPrediction.recommendedCareer ||
-        latestPrediction.career ||
-        latestPrediction.predictedCareer ||
-        latestPrediction.careerName ||
-        "";
-
-      // =================================================
-      // NO CAREER
-      // =================================================
-
-      if (
-        !career ||
-        String(
-          career
-        ).trim() === ""
-      ) {
-
-        console.log(
-          "Didn't find a career in backend prediction.."
-        );
-
-        setPredictionResult(
-          null
-        );
-
-        return;
-
-      }
-
-      // =================================================
-      // CONFIDENCE
-      // =================================================
-
-      let confidence =
-        latestPrediction.confidence;
-
-      if (
-        confidence !== null &&
-        confidence !== undefined &&
-        confidence !== ""
-      ) {
-
-        confidence =
-          Number(
-            confidence
-          );
-
-        // Example:
-        // 0.465 -> 46.5
-
-        if (
-          confidence > 0 &&
-          confidence <= 1
-        ) {
-
-          confidence =
-            confidence * 100;
-
-        }
-
-        confidence =
-          Math.round(
-            confidence * 100
-          ) / 100;
-
-      } else {
-
-        confidence = 0;
-
-      }
-
-      // =================================================
-      // FINAL BACKEND RESULT
-      // =================================================
-
-      const finalPrediction = {
-
-        id:
-          latestPrediction.id,
-
-        recommendedCareer:
-          String(
-            career
-          ).trim(),
-
-        confidence,
-
-        reason:
-          latestPrediction.reason ||
-          "",
-
-        createdAt:
-          latestPrediction.createdAt ||
-          null
-
-      };
-
-      // =================================================
-      // SAVE IN STATE
-      // =================================================
-
-      setPredictionResult(
-        finalPrediction
-      );
-
-      // =================================================
-      // ALSO SAVE IN LOCALSTORAGE
-      // =================================================
-
-      localStorage.setItem(
-        "latestPrediction",
-        JSON.stringify(
-          finalPrediction
-        )
-      );
-
-      localStorage.setItem(
-        "latestPredictedCareer",
-        finalPrediction.recommendedCareer
-      );
-
-      localStorage.setItem(
-        "recommendedCareer",
-        finalPrediction.recommendedCareer
-      );
-
-      console.log(
-        "===================================="
-      );
-
-      console.log(
-        "FINAL DASHBOARD AI CAREER:"
-      );
-
-      console.log(
-        finalPrediction.recommendedCareer
-      );
-
-      console.log(
-        "FINAL DASHBOARD AI CONFIDENCE:"
-      );
-
-      console.log(
-        finalPrediction.confidence
-      );
-
-      console.log(
-        "===================================="
-      );
-
-    } catch (error) {
-
-      console.error(
-        "AI PREDICTION LOAD ERROR:",
-        error
-      );
-
-      console.error(
-        "STATUS:",
-        error.response?.status
-      );
-
-      console.error(
-        "BACKEND RESPONSE:",
-        error.response?.data
-      );
-
-      // =================================================
-      // STEP 3
-      // BACKEND ERROR HO JAYE TO LOCALSTORAGE
-      // DOBARA FALLBACK
-      // =================================================
-
-      try {
-
-        const savedPrediction =
-          localStorage.getItem(
-            "latestPrediction"
-          );
-
-        if (savedPrediction) {
-
-          const parsed =
-            JSON.parse(
-              savedPrediction
-            );
-
-          const career =
-            parsed.recommendedCareer ||
-            parsed.career ||
-            parsed.predictedCareer ||
-            "";
-
-          if (career) {
-
-            let confidence =
-              Number(
-                parsed.confidence || 0
-              );
-
-            if (
-              confidence > 0 &&
-              confidence <= 1
-            ) {
-
-              confidence =
-                confidence * 100;
-
-            }
-
-            const fallbackPrediction = {
-
-              id:
-                parsed.id ||
-                null,
-
-              recommendedCareer:
-                String(
-                  career
-                ).trim(),
-
-              confidence:
-                Math.round(
-                  confidence * 100
-                ) / 100,
-
-              reason:
-                parsed.reason ||
-                "",
-
-              createdAt:
-                parsed.createdAt ||
-                null
-
-            };
-
-            setPredictionResult(
-              fallbackPrediction
-            );
-
-            console.log(
-              "LOCALSTORAGE FALLBACK RESULT:",
-              fallbackPrediction
-            );
-
-            return;
-
-          }
-
-        }
-
-      } catch (
-        fallbackError
-      ) {
-
-        console.error(
-          "PREDICTION FALLBACK ERROR:",
-          fallbackError
-        );
-
-      }
-
-      setPredictionResult(
-        null
-      );
-
+  // ==========================================================
+  // HELPERS
+  // ==========================================================
+
+  const toNumber = (value) => {
+    if (value === null || value === undefined || value === "") {
+      return 0;
     }
 
+    const number = Number(value);
+
+    return Number.isFinite(number) ? number : 0;
   };
 
-  // =====================================================
-  // GET INTEREST TEST
-  // =====================================================
+  const isFilled = (value) =>
+    value !== null &&
+    value !== undefined &&
+    String(value).trim() !== "";
 
-  const loadInterestResult = async (
-    studentId
-  ) => {
+  // ==========================================================
+  // PROFILE COMPLETION
+  // ==========================================================
+
+  const calculateProfileCompletion = (student) => {
+    if (!student) return 0;
+
+    const fields = [
+      student.fullName ?? student.name ?? student.studentName,
+      student.email ?? student.emailAddress,
+      student.programmingKnowledge,
+      student.preferredField,
+      student.education,
+      student.experience,
+    ];
+
+    return Math.round(
+      (fields.filter(isFilled).length / 6) * 100
+    );
+  };
+
+  // ==========================================================
+  // CONFIDENCE
+  // ==========================================================
+
+  const normalizeConfidence = (value) => {
+    let confidence = toNumber(value);
+
+    if (confidence > 0 && confidence <= 1) {
+      confidence *= 100;
+    }
+
+    return Math.round(confidence * 100) / 100;
+  };
+
+  // ==========================================================
+  // LOAD LATEST AI PREDICTION
+  // ==========================================================
+
+  const loadLatestPrediction = async (studentId) => {
+  try {
+    // =====================================================
+    // FIRST: CHECK CURRENT SKILL ASSESSMENT CATEGORY SCORES
+    // =====================================================
+
+    let categoryScores = null;
 
     try {
-
-      const assessmentData =
-        await interestAssessmentService
-          .getByStudentId(
-            studentId
-          );
-
-      console.log(
-        "INTEREST TEST DATA:",
-        assessmentData
+      const savedCategoryScores = localStorage.getItem(
+        "latestSkillAssessmentCategoryScores"
       );
 
-      if (
-        !Array.isArray(
-          assessmentData
-        ) ||
-        assessmentData.length === 0
-      ) {
+      if (savedCategoryScores) {
+        categoryScores = JSON.parse(savedCategoryScores);
+      }
+    } catch (error) {
+      console.error(
+        "CATEGORY SCORE READ ERROR:",
+        error
+      );
+    }
 
-        setInterestResult(
-          null
+    // =====================================================
+    // GET STRONGEST CATEGORY
+    // =====================================================
+
+    if (categoryScores) {
+      const technology = toNumber(
+        categoryScores.technology_score
+      );
+
+      const data = toNumber(
+        categoryScores.data_score
+      );
+
+      const web = toNumber(
+        categoryScores.web_score
+      );
+
+      const cyberSecurity = toNumber(
+        categoryScores.cyber_security_score
+      );
+
+      const scores = [
+        {
+          category: "technology",
+          score: technology,
+          career: "Software Developer",
+        },
+        {
+          category: "data",
+          score: data,
+          career: "Data Analyst",
+        },
+        {
+          category: "web",
+          score: web,
+          career: "Web Developer",
+        },
+        {
+          category: "cyber_security",
+          score: cyberSecurity,
+          career: "Cyber Security Specialist",
+        },
+      ];
+
+      const strongestCategory = scores.reduce(
+        (best, current) =>
+          current.score > best.score
+            ? current
+            : best,
+        scores[0]
+      );
+
+      // ===================================================
+      // CURRENT ASSESSMENT HAS A VALID SCORE
+      // ===================================================
+
+      if (strongestCategory.score > 0) {
+        const currentPrediction = {
+          recommendedCareer:
+            strongestCategory.career,
+
+          confidence:
+            strongestCategory.score,
+
+          strongestCategory:
+            strongestCategory.category,
+
+          strongestCategoryScore:
+            strongestCategory.score,
+
+          predictionSource:
+            "skill_assessment_category",
+        };
+
+        setPredictionResult(
+          currentPrediction
+        );
+
+        // Update localStorage so old prediction
+        // cannot remain visible on dashboard.
+        localStorage.setItem(
+          "latestPrediction",
+          JSON.stringify(currentPrediction)
         );
 
         return;
-
       }
+    }
 
-      // =================================================
-      // GROUP ATTEMPTS
-      // =================================================
+    // =====================================================
+    // SECOND: CHECK SAVED LATEST PREDICTION
+    // =====================================================
+
+    const savedPrediction =
+      localStorage.getItem("latestPrediction");
+
+    if (savedPrediction) {
+      try {
+        const parsed =
+          JSON.parse(savedPrediction);
+
+        const career =
+          parsed.recommendedCareer ||
+          parsed.career ||
+          parsed.predictedCareer ||
+          parsed.careerName ||
+          "";
+
+        if (String(career).trim()) {
+          setPredictionResult({
+            recommendedCareer:
+              String(career).trim(),
+
+            confidence:
+              normalizeConfidence(
+                parsed.confidence
+              ),
+          });
+
+          return;
+        }
+      } catch (error) {
+        console.error(
+          "LOCAL PREDICTION ERROR:",
+          error
+        );
+      }
+    }
+
+    // =====================================================
+    // THIRD: GET PREDICTION FROM BACKEND
+    // =====================================================
+
+    const response = await axios.get(
+      `${PREDICTION_API}/student/${studentId}`
+    );
+
+    let predictions = response.data;
+
+    if (!Array.isArray(predictions)) {
+      predictions = predictions
+        ? [predictions]
+        : [];
+    }
+
+    if (predictions.length === 0) {
+      setPredictionResult(null);
+      return;
+    }
+
+    const latest = [...predictions].sort(
+      (a, b) =>
+        toNumber(b.id) -
+        toNumber(a.id)
+    )[0];
+
+    const career =
+      latest.recommendedCareer ||
+      latest.career ||
+      latest.predictedCareer ||
+      latest.careerName ||
+      "";
+
+    if (!String(career).trim()) {
+      setPredictionResult(null);
+      return;
+    }
+
+    const finalPrediction = {
+      recommendedCareer:
+        String(career).trim(),
+
+      confidence:
+        normalizeConfidence(
+          latest.confidence
+        ),
+    };
+
+    setPredictionResult(
+      finalPrediction
+    );
+
+    localStorage.setItem(
+      "latestPrediction",
+      JSON.stringify(
+        finalPrediction
+      )
+    );
+  } catch (error) {
+    console.error(
+      "AI PREDICTION ERROR:",
+      error
+    );
+
+    setPredictionResult(null);
+  }
+};
+
+  // ==========================================================
+  // LOAD INTEREST TEST
+  // ==========================================================
+
+  const loadInterestResult = async (studentId) => {
+    try {
+      const assessmentData =
+        await interestAssessmentService.getByStudentId(
+          studentId
+        );
+
+      if (
+        !Array.isArray(assessmentData) ||
+        assessmentData.length === 0
+      ) {
+        setInterestResult(null);
+        return;
+      }
 
       const groupedAttempts = {};
 
-      assessmentData.forEach(
-        (item) => {
+      assessmentData.forEach((item) => {
+        const attemptId =
+          item.attemptId || "OLD-ATTEMPT";
 
-          const attemptId =
-            item.attemptId ||
-            "OLD-ATTEMPT";
-
-          if (
-            !groupedAttempts[
-              attemptId
-            ]
-          ) {
-
-            groupedAttempts[
-              attemptId
-            ] = [];
-
-          }
-
-          groupedAttempts[
-            attemptId
-          ].push(item);
-
+        if (!groupedAttempts[attemptId]) {
+          groupedAttempts[attemptId] = [];
         }
-      );
 
-      // =================================================
-      // SORT ATTEMPTS
-      // =================================================
+        groupedAttempts[attemptId].push(item);
+      });
 
-      const attemptEntries =
-        Object.entries(
-          groupedAttempts
+      const latestAttempt = Object.entries(
+        groupedAttempts
+      ).sort(([, a], [, b]) => {
+        const maxA = Math.max(
+          ...a.map((item) => toNumber(item.id))
         );
 
-      attemptEntries.sort(
-        (
-          [, a],
-          [, b]
-        ) => {
-
-          const maxA =
-            Math.max(
-              ...a.map(
-                (item) =>
-                  Number(
-                    item.id || 0
-                  )
-              )
-            );
-
-          const maxB =
-            Math.max(
-              ...b.map(
-                (item) =>
-                  Number(
-                    item.id || 0
-                  )
-              )
-            );
-
-          return (
-            maxB - maxA
-          );
-
-        }
-      );
-
-      const latestAttempt =
-        attemptEntries[0];
-
-      if (
-        !latestAttempt
-      ) {
-
-        setInterestResult(
-          null
+        const maxB = Math.max(
+          ...b.map((item) => toNumber(item.id))
         );
 
+        return maxB - maxA;
+      })[0];
+
+      if (!latestAttempt) {
+        setInterestResult(null);
         return;
-
       }
 
-      const [
-        attemptId,
-        attemptData
-      ] = latestAttempt;
-
-      // =================================================
-      // CATEGORY COUNT
-      // =================================================
+      const [, attemptData] = latestAttempt;
 
       const categoryCounts = {};
 
-      attemptData.forEach(
-        (item) => {
+      attemptData.forEach((item) => {
+        const category = item.careerCategory;
 
-          const category =
-            item.careerCategory;
+        if (!category) return;
 
-          if (!category) {
+        categoryCounts[category] =
+          (categoryCounts[category] || 0) + 1;
+      });
 
-            return;
-
-          }
-
-          categoryCounts[
-            category
-          ] =
-            (
-              categoryCounts[
-                category
-              ] || 0
-            ) + 1;
-
-        }
-      );
-
-      // =================================================
-      // STRONGEST CATEGORY
-      // =================================================
-
-      let strongestCategory =
-        "";
-
-      let highestScore = 0;
-
-      Object.entries(
+      const strongestCategory = Object.entries(
         categoryCounts
-      ).forEach(
-        (
-          [
-            category,
-            score
-          ]
-        ) => {
-
-          if (
-            score >
-            highestScore
-          ) {
-
-            highestScore =
-              score;
-
-            strongestCategory =
-              category;
-
-          }
-
-        }
-      );
-
-      // =================================================
-      // INTEREST CAREER MAP
-      // =================================================
+      ).sort(([, a], [, b]) => b - a)[0]?.[0];
 
       const careerMap = {
-
         Technology: {
-
-          career:
-            "Software Developer",
-
-          icon:
-            "💻"
-
+          career: "Software Developer",
+          icon: "💻",
         },
 
         Data: {
-
-          career:
-            "Data Analyst",
-
-          icon:
-            "📊"
-
+          career: "Data Analyst",
+          icon: "📊",
         },
 
         Web: {
-
-          career:
-            "Web Developer",
-
-          icon:
-            "🌐"
-
+          career: "Web Developer",
+          icon: "🌐",
         },
 
         "Cyber Security": {
-
-          career:
-            "Cyber Security Specialist",
-
-          icon:
-            "🔐"
-
-        }
-
+          career: "Cyber Security Specialist",
+          icon: "🔐",
+        },
       };
 
       const careerInfo =
-        careerMap[
-          strongestCategory
-        ];
-
-      if (
-        !careerInfo
-      ) {
-
-        setInterestResult({
-
-          attemptId,
-
-          category:
-            strongestCategory ||
-            "Not Available",
-
+        careerMap[strongestCategory] || {
           career:
-            strongestCategory ||
-            "Not Available",
-
-          icon:
-            "🧠",
-
-          score:
-            highestScore
-
-        });
-
-        return;
-
-      }
-
-      // =================================================
-      // SAVE INTEREST RESULT
-      // =================================================
+            strongestCategory || "Not Available",
+          icon: "🧠",
+        };
 
       setInterestResult({
-
-        attemptId,
-
         category:
-          strongestCategory,
+          strongestCategory || "Not Available",
 
-        career:
-          careerInfo.career,
+        career: careerInfo.career,
 
-        icon:
-          careerInfo.icon,
-
-        score:
-          highestScore
-
+        icon: careerInfo.icon,
       });
-
     } catch (error) {
-
       console.error(
-        "INTEREST TEST LOAD ERROR:",
+        "INTEREST TEST ERROR:",
         error
       );
 
-      setInterestResult(
-        null
-      );
-
+      setInterestResult(null);
     }
-
   };
 
-  // =====================================================
+  // ==========================================================
+  // LOAD SKILL CAREER RECOMMENDATION
+  // ==========================================================
+
+  const loadSkillCareerRecommendation = (
+    skills
+  ) => {
+    try {
+      if (!Array.isArray(skills) || skills.length === 0) {
+        setSkillCareerResult(null);
+        return;
+      }
+
+      const bestCareer = getBestCareer(skills);
+
+      if (!bestCareer) {
+        setSkillCareerResult(null);
+        return;
+      }
+
+      setSkillCareerResult(bestCareer);
+
+      // Save latest skill recommendation
+      localStorage.setItem(
+        "latestSkillCareerRecommendation",
+        JSON.stringify(bestCareer)
+      );
+    } catch (error) {
+      console.error(
+        "SKILL CAREER RECOMMENDATION ERROR:",
+        error
+      );
+
+      setSkillCareerResult(null);
+    }
+  };
+
+  // ==========================================================
   // LOAD DASHBOARD
-  // =====================================================
+  // ==========================================================
 
   useEffect(() => {
+    const loadDashboard = async () => {
+      const userId =
+        localStorage.getItem("userId");
 
-    const loadDashboard =
-      async () => {
+      const storedUserName =
+        localStorage.getItem("userName") ||
+        "Student";
 
-        const storedUserId =
-          getUserId();
+      setUserName(storedUserName);
 
-        const storedUserName =
-          localStorage.getItem(
-            "userName"
-          );
+      if (!userId) {
+        setLoading(false);
+        return;
+      }
 
-        const storedUserEmail =
-          localStorage.getItem(
-            "userEmail"
-          );
+      try {
+        // ------------------------------------------------------
+        // STUDENT
+        // ------------------------------------------------------
 
-        const storedUserRole =
-          localStorage.getItem(
-            "userRole"
-          );
+        const student =
+          await studentService.getByUserId(userId);
 
-        setUserName(
-          storedUserName ||
-          "Student"
-        );
-
-        setUserEmail(
-          storedUserEmail ||
-          ""
-        );
-
-        setUserRole(
-          storedUserRole ||
-          "STUDENT"
-        );
-
-        // =================================================
-        // USER ID CHECK
-        // =================================================
-
-        if (!storedUserId) {
-
-          console.error(
-            "User ID not found.."
-          );
-
-          setLoading(
-            false
-          );
-
+        if (!student?.id) {
+          setLoading(false);
           return;
-
         }
 
-        try {
+        const studentId = student.id;
 
-          // =================================================
-          // STEP 1
-          // GET STUDENT
-          // =================================================
+        // ------------------------------------------------------
+        // LOAD SKILLS
+        // ------------------------------------------------------
 
-          const student =
-            await studentService
-              .getByUserId(
-                storedUserId
-              );
+        const skillsPromise =
+          skillService.getByStudentId(studentId);
 
-          console.log(
-            "STUDENT PROFILE:",
+        // ------------------------------------------------------
+        // DASHBOARD API
+        // ------------------------------------------------------
+
+        const dashboardPromise = axios
+          .get(`${DASHBOARD_API}/${studentId}`)
+          .then((response) => response.data)
+          .catch((error) => {
+            console.error(
+              "DASHBOARD API ERROR:",
+              error
+            );
+
+            return null;
+          });
+
+        // ------------------------------------------------------
+        // PARALLEL LOAD
+        // ------------------------------------------------------
+
+        const [
+          skillsResponse,
+          dashboardResponse,
+        ] = await Promise.all([
+          skillsPromise.catch((error) => {
+            console.error(
+              "SKILLS LOAD ERROR:",
+              error
+            );
+
+            return [];
+          }),
+
+          dashboardPromise,
+        ]);
+
+        // ------------------------------------------------------
+        // SKILLS
+        // ------------------------------------------------------
+
+        const skills = Array.isArray(
+          skillsResponse
+        )
+          ? skillsResponse
+          : [];
+
+        const directSkillsCount =
+          skills.length;
+
+        // ------------------------------------------------------
+        // CALCULATE SKILL CAREER
+        // ------------------------------------------------------
+
+        loadSkillCareerRecommendation(
+          skills
+        );
+
+        // ------------------------------------------------------
+        // PROFILE COMPLETION
+        // ------------------------------------------------------
+
+        const apiSkillsCount = toNumber(
+          dashboardResponse?.skillsCount
+        );
+
+        const finalProfileCompletion =
+          calculateProfileCompletion(
             student
           );
 
-          if (
-            !student ||
-            !student.id
-          ) {
+        const finalSkillsCount =
+          directSkillsCount > 0
+            ? directSkillsCount
+            : apiSkillsCount;
 
-            console.error(
-              "The student didn't get ID"
-            );
+        // ------------------------------------------------------
+        // STUDENT NAME
+        // ------------------------------------------------------
 
-            setLoading(
-              false
-            );
+        const finalStudentName =
+          dashboardResponse?.studentName ||
+          student.fullName ||
+          student.studentName ||
+          storedUserName ||
+          "Student";
 
-            return;
+        setUserName(finalStudentName);
 
-          }
+        // ------------------------------------------------------
+        // DASHBOARD STATE
+        // ------------------------------------------------------
 
-          const studentId =
-            student.id;
+        setDashboardData({
+          studentId,
 
-          console.log(
-            "ACTUAL STUDENT ID:",
-            studentId
-          );
+          studentName:
+            finalStudentName,
 
-          // =================================================
-          // STEP 2
-          // DASHBOARD API
-          // =================================================
+          profileCompletion:
+            finalProfileCompletion,
 
-          try {
+          skillsCount:
+            finalSkillsCount,
+        });
 
-            const response =
-              await axios.get(
-                `http://ai-career-recommendation-production.up.railway.app/api/dashboard/${studentId}`
-              );
+        // ------------------------------------------------------
+        // OTHER DATA
+        // ------------------------------------------------------
 
-            console.log(
-              "DASHBOARD API RESPONSE:",
-              response.data
-            );
+        await Promise.all([
+          loadLatestPrediction(studentId),
 
-            setDashboardData({
-
-              studentId:
-                response.data.studentId ??
-                studentId,
-
-              studentName:
-                response.data.studentName ||
-                student.fullName ||
-                "Student",
-
-              profileCompletion:
-                response.data.profileCompletion ??
-                0,
-
-              skillsCount:
-                response.data.skillsCount ??
-                0,
-
-              recommendedCareer:
-                response.data.recommendedCareer ||
-                "Not Generated",
-
-              confidence:
-                response.data.confidence ??
-                0,
-
-              totalRoadmapSteps:
-                response.data.totalRoadmapSteps ??
-                0,
-
-              completedRoadmapSteps:
-                response.data.completedRoadmapSteps ??
-                0,
-
-              roadmapProgress:
-                response.data.roadmapProgress ??
-                0
-
-            });
-
-            setUserName(
-              response.data.studentName ||
-              student.fullName ||
-              storedUserName ||
-              "Student"
-            );
-
-          } catch (
-            dashboardError
-          ) {
-
-            console.error(
-              "DASHBOARD API ERROR:",
-              dashboardError
-            );
-
-          }
-
-          // =================================================
-          // STEP 3
-          // LOAD REAL AI PREDICTION
-          // =================================================
-
-          await loadLatestPrediction(
-            studentId
-          );
-
-          // =================================================
-          // STEP 4
-          // LOAD INTEREST TEST
-          // =================================================
-
-          await loadInterestResult(
-            studentId
-          );
-
-        } catch (error) {
-
-          console.error(
-            "DASHBOARD ERROR:",
-            error
-          );
-
-          console.error(
-            "STATUS:",
-            error.response?.status
-          );
-
-          console.error(
-            "BACKEND RESPONSE:",
-            error.response?.data
-          );
-
-        } finally {
-
-          setLoading(
-            false
-          );
-
-        }
-
-      };
+          loadInterestResult(studentId),
+        ]);
+      } catch (error) {
+        console.error(
+          "DASHBOARD ERROR:",
+          error
+        );
+      } finally {
+        setLoading(false);
+      }
+    };
 
     loadDashboard();
-
   }, []);
 
-  // =====================================================
-  // LOGOUT
-  // =====================================================
-
-  const handleLogout = () => {
-
-    localStorage.removeItem(
-      "isLoggedIn"
-    );
-
-    localStorage.removeItem(
-      "userId"
-    );
-
-    localStorage.removeItem(
-      "studentId"
-    );
-
-    localStorage.removeItem(
-      "userName"
-    );
-
-    localStorage.removeItem(
-      "userEmail"
-    );
-
-    localStorage.removeItem(
-      "userRole"
-    );
-
-    localStorage.removeItem(
-      "user"
-    );
-
-    navigate(
-      "/login"
-    );
-
-  };
-
-  // =====================================================
-  // USER INITIAL
-  // =====================================================
-
-  const userInitial =
-    userName &&
-    userName.length > 0
-      ? userName
-          .charAt(0)
-          .toUpperCase()
-      : "S";
-
-  // =====================================================
+  // ==========================================================
   // LOADING
-  // =====================================================
+  // ==========================================================
 
   if (loading) {
-
     return (
-
-      <div className="page-container">
-
-        <div className="form-card">
-
-          <h2>
-            Loading Dashboard...
-          </h2>
-
+      <div className="dashboard-page">
+        <div className="dashboard-loading-card">
+          Loading Dashboard...
         </div>
-
       </div>
-
     );
-
   }
 
-  // =====================================================
-  // AI CAREER
-  // =====================================================
+  // ==========================================================
+  // FINAL DATA
+  // ==========================================================
 
   const aiCareer =
-    predictionResult
-      ?.recommendedCareer ||
-    "";
+    predictionResult?.recommendedCareer || "";
 
   const aiConfidence =
-    predictionResult
-      ?.confidence ??
-    0;
+    predictionResult?.confidence ?? 0;
 
-  // =====================================================
-  // UI
-  // =====================================================
+  const skillCareer =
+    skillCareerResult?.career || "";
+
+  const skillMatch =
+    skillCareerResult?.score ?? 0;
+
+  // ==========================================================
+  // RENDER
+  // ==========================================================
 
   return (
-
-    <div className="dashboard-layout">
-
-      {/* =================================================
-          SIDEBAR
-      ================================================= */}
-
-      <aside className="dashboard-sidebar">
-
-        {/* LOGO */}
-
-        <div className="dashboard-logo">
-
-          <div className="logo-icon">
-            ✦
-          </div>
-
-          <div>
-
-            <h2>
-              CareerAI
-            </h2>
-
-            <span>
-              Career Assistant
-            </span>
-
-          </div>
-
-        </div>
-
-        {/* NAVIGATION */}
-
-        <nav className="dashboard-nav">
-
-          <div className="nav-section-title">
-            MAIN
-          </div>
-
-          <button
-            className="dashboard-nav-item active"
-            onClick={() =>
-              navigate(
-                "/dashboard"
-              )
-            }
-          >
-
-            <span>
-              ⌂
-            </span>
-
-            Dashboard
-
-          </button>
-
-          <div className="nav-section-title">
-            MY PROFILE
-          </div>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/profile"
-              )
-            }
-          >
-
-            <span>
-              ◉
-            </span>
-
-            My Profile
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/academic-details"
-              )
-            }
-          >
-
-            <span>
-              ◉
-            </span>
-
-            Academic Details
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/skills"
-              )
-            }
-          >
-
-            <span>
-              ◉
-            </span>
-
-            Skills
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/interest-assessment"
-              )
-            }
-          >
-
-            <span>
-              🧠
-            </span>
-
-            Interest Test
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/skill-assessment"
-              )
-            }
-          >
-
-            <span>
-              📊
-            </span>
-
-            Skill Assessment
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/ai-prediction"
-              )
-            }
-          >
-
-            <span>
-              ✦
-            </span>
-
-            AI Prediction
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/career-roadmap"
-              )
-            }
-          >
-
-            <span>
-              🛣️
-            </span>
-
-            Career Roadmap
-
-          </button>
-
-          <div className="nav-section-title">
-            RESOURCES
-          </div>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/courses"
-              )
-            }
-          >
-
-            <span>
-              ▤
-            </span>
-
-            Recommended Courses
-
-          </button>
-
-          <button
-            className="dashboard-nav-item"
-            onClick={() =>
-              navigate(
-                "/career-report"
-              )
-            }
-          >
-
-            <span>
-              📄
-            </span>
-
-            Report
-
-          </button>
-
-        </nav>
-
-        {/* SIDEBAR BOTTOM */}
-
-        <div className="sidebar-bottom">
-
-          <button
-            className="logout-button"
-            onClick={
-              handleLogout
-            }
-          >
-
-            <span>
-              ↪
-            </span>
-
-            Logout
-
-          </button>
-
-        </div>
-
-      </aside>
-
-      {/* =================================================
-          MAIN
-      ================================================= */}
-
+    <div className="dashboard-page">
       <main className="dashboard-main">
 
-        {/* NAVBAR */}
+        {/* =====================================================
+            NAVBAR
+        ====================================================== */}
 
         <header className="dashboard-navbar">
-
           <div>
-
-            <h1>
-              Dashboard
-            </h1>
+            <h1>Dashboard</h1>
 
             <p>
-              Welcome back, {userName}! Let's build your career future.
+              Welcome back, {userName}! Let's build your
+              career future.
             </p>
-
           </div>
 
-          <div className="navbar-right">
+          <div className="navbar-user">
+            <div className="avatar">👤</div>
 
-            <div className="navbar-user">
-
-              <div className="avatar">
-                👤
-              </div>
-
-              <div>
-
-                <h3>
-                  {userName}
-                </h3>
-
-                <p>
-                  Career Explorer
-                </p>
-
-              </div>
-
+            <div>
+              <h3>{userName}</h3>
+              <p>Career Explorer</p>
             </div>
-
           </div>
-
         </header>
-
-        {/* =================================================
-            CONTENT
-        ================================================= */}
 
         <section className="dashboard-content-new">
 
-          {/* =================================================
+          {/* ===================================================
               WELCOME CARD
-          ================================================= */}
+          ==================================================== */}
 
           <div className="welcome-card">
-
             <div className="welcome-content">
 
               <span className="welcome-badge">
@@ -1615,52 +720,34 @@ function Dashboard() {
               </span>
 
               <h2>
-
                 Discover the career
-
                 <br />
-
                 that's right for you.
-
               </h2>
 
               <p>
-
-                Complete your profile and take our interest
-                assessment to get personalized career
-                recommendations powered by AI.
-
+                Complete your profile and take our
+                interest assessment to get personalized
+                career recommendations powered by AI.
               </p>
 
               <button
                 className="primary-dashboard-button"
                 onClick={() =>
-                  navigate(
-                    "/ai-prediction"
-                  )
+                  goToPage("/ai-prediction")
                 }
               >
-
                 {predictionResult
                   ? "View AI Prediction"
                   : "Generate AI Prediction"}
 
-                <span>
-                  →
-                </span>
-
+                <span>→</span>
               </button>
-
             </div>
 
             <div className="welcome-visual">
-
               <div className="ai-circle">
-
-                <div className="ai-inner">
-                  ✦
-                </div>
-
+                <div className="ai-inner">✦</div>
               </div>
 
               <div className="floating-card card-one">
@@ -1674,21 +761,18 @@ function Dashboard() {
               <div className="floating-card card-three">
                 🎨 Design
               </div>
-
             </div>
-
           </div>
 
-          {/* =================================================
-              STAT CARDS
-          ================================================= */}
+          {/* ===================================================
+              STATS
+          ==================================================== */}
 
           <div className="dashboard-stats">
 
             {/* PROFILE */}
 
             <div className="dashboard-stat-card">
-
               <div className="stat-card-top">
 
                 <div className="stat-card-icon purple">
@@ -1696,14 +780,11 @@ function Dashboard() {
                 </div>
 
                 <span className="stat-status">
-                  Profile
+                  PROFILE
                 </span>
-
               </div>
 
-              <h3>
-                Profile Completion
-              </h3>
+              <h3>Profile Completion</h3>
 
               <div className="progress-wrapper">
 
@@ -1712,30 +793,26 @@ function Dashboard() {
                   <div
                     className="progress-fill"
                     style={{
-                      width:
-                        `${dashboardData.profileCompletion}%`
+                      width: `${dashboardData.profileCompletion}%`,
                     }}
-                  >
-                  </div>
+                  />
 
                 </div>
 
                 <strong>
                   {dashboardData.profileCompletion}%
                 </strong>
-
               </div>
 
               <p>
-                Complete your profile to improve recommendations.
+                Complete your profile to improve
+                recommendations.
               </p>
-
             </div>
 
             {/* SKILLS */}
 
             <div className="dashboard-stat-card">
-
               <div className="stat-card-top">
 
                 <div className="stat-card-icon blue">
@@ -1745,31 +822,22 @@ function Dashboard() {
                 <span className="stat-status">
                   SKILLS
                 </span>
-
               </div>
 
-              <h3>
-                Skills Added
-              </h3>
+              <h3>Skills Added</h3>
 
               <div className="big-stat">
-
                 {dashboardData.skillsCount}
-
               </div>
 
               <p>
                 Add your technical and soft skills.
               </p>
-
             </div>
 
-            {/* =================================================
-                INTEREST TEST
-            ================================================= */}
+            {/* INTEREST */}
 
             <div className="dashboard-stat-card">
-
               <div className="stat-card-top">
 
                 <div className="stat-card-icon orange">
@@ -1779,94 +847,45 @@ function Dashboard() {
                 <span className="stat-status">
                   ASSESSMENT
                 </span>
-
               </div>
 
-              <h3>
-                Interest Test
-              </h3>
+              <h3>Interest Test</h3>
 
               {interestResult ? (
-
                 <>
-
-                  <div
-                    className="big-stat"
-                    style={{
-                      fontSize:
-                        "22px"
-                    }}
-                  >
-
-                    <span>
-                      ✓ Completed
-                    </span>
-
+                  <div className="big-stat interest-completed">
+                    ✓ Completed
                   </div>
 
                   <p>
-
-                    <strong
-                      style={{
-                        color:
-                          "#172554",
-                        fontWeight:
-                          "700"
-                      }}
-                    >
-
+                    <strong>
                       {interestResult.icon}{" "}
                       {interestResult.career}
-
                     </strong>
 
                     <br />
 
-                    <span
-                      style={{
-                        color:
-                          "#64748b"
-                      }}
-                    >
-
-                      Interest:
-                      {" "}
-                      {interestResult.category}
-
-                    </span>
-
+                    Interest:{" "}
+                    {interestResult.category}
                   </p>
-
                 </>
-
               ) : (
-
                 <>
-
                   <div className="big-stat">
-
-                    <span className="not-started">
-                      Not Started
-                    </span>
-
+                    Not Started
                   </div>
 
                   <p>
-                    Take the test to discover your interests.
+                    Take the test to discover your
+                    interests.
                   </p>
-
                 </>
-
               )}
-
             </div>
 
-            {/* =================================================
-                AI CAREER PREDICTION
-            ================================================= */}
+            {/* AI */}
 
             <div className="dashboard-stat-card">
-
               <div className="stat-card-top">
 
                 <div className="stat-card-icon green">
@@ -1876,80 +895,47 @@ function Dashboard() {
                 <span className="stat-status">
                   AI
                 </span>
-
               </div>
 
-              <h3>
-                Career Prediction
-              </h3>
+              <h3>Career Prediction</h3>
 
               {predictionResult ? (
-
                 <>
-
-                  <div
-                    className="big-stat"
-                    style={{
-                      fontSize:
-                        "22px",
-                      color:
-                        "#172554",
-                      fontWeight:
-                        "700"
-                    }}
-                  >
-
+                  <div className="big-stat ai-career-text">
                     {aiCareer}
-
                   </div>
 
                   <p>
-
-                    AI Confidence:
-                    {" "}
-
+                    AI Confidence:{" "}
                     <strong>
                       {aiConfidence}%
                     </strong>
-
                   </p>
-
                 </>
-
               ) : (
-
                 <>
-
                   <div className="big-stat">
-
                     —
-
                   </div>
 
                   <p>
-                    Generate AI prediction to see your career.
+                    Generate AI prediction to see
+                    your career.
                   </p>
-
                 </>
-
               )}
-
             </div>
-
           </div>
 
-          {/* =================================================
-              BOTTOM SECTION
-          ================================================= */}
+          {/* ===================================================
+              COMPLETE PROFILE
+          ==================================================== */}
 
           <div className="dashboard-grid-bottom">
-
-            {/* PROFILE TASKS */}
 
             <div className="dashboard-panel">
 
               <div className="panel-heading">
-
                 <div>
 
                   <h2>
@@ -1957,20 +943,17 @@ function Dashboard() {
                   </h2>
 
                   <p>
-                    A complete profile gives better AI recommendations.
+                    A complete profile gives better
+                    AI recommendations.
                   </p>
-
                 </div>
 
                 <span className="panel-icon">
                   ✦
                 </span>
-
               </div>
 
               <div className="profile-tasks">
-
-                {/* PERSONAL */}
 
                 <div className="profile-task">
 
@@ -1985,26 +968,19 @@ function Dashboard() {
                     </h3>
 
                     <p>
-                      Add your basic profile information.
+                      Add your basic profile
+                      information.
                     </p>
-
                   </div>
 
                   <button
                     onClick={() =>
-                      navigate(
-                        "/profile"
-                      )
+                      goToPage("/profile")
                     }
                   >
-
                     Complete →
-
                   </button>
-
                 </div>
-
-                {/* ACADEMIC */}
 
                 <div className="profile-task">
 
@@ -2019,26 +995,21 @@ function Dashboard() {
                     </h3>
 
                     <p>
-                      Add marks, education and academic information.
+                      Add marks, education and
+                      academic information.
                     </p>
-
                   </div>
 
                   <button
                     onClick={() =>
-                      navigate(
+                      goToPage(
                         "/academic-details"
                       )
                     }
                   >
-
                     Add →
-
                   </button>
-
                 </div>
-
-                {/* SKILLS */}
 
                 <div className="profile-task">
 
@@ -2053,32 +1024,26 @@ function Dashboard() {
                     </h3>
 
                     <p>
-                      Add programming and technical skills.
+                      Add programming and technical
+                      skills.
                     </p>
-
                   </div>
 
                   <button
                     onClick={() =>
-                      navigate(
-                        "/skills"
-                      )
+                      goToPage("/skills")
                     }
                   >
-
                     Add →
-
                   </button>
-
                 </div>
 
               </div>
-
             </div>
 
             {/* =================================================
-                AI RECOMMENDATION
-            ================================================= */}
+                AI CAREER ENGINE
+            ================================================== */}
 
             <div className="dashboard-panel ai-panel">
 
@@ -2091,121 +1056,45 @@ function Dashboard() {
               </span>
 
               <h2>
-
                 Your Career
-
                 <br />
-
                 Recommendation
-
               </h2>
 
               {predictionResult ? (
-
                 <>
-
                   <p>
-
-                    Based on your profile, academic details,
-                    skills and assessment, our AI recommends:
-
+                    Based on your profile, academic
+                    details, skills and assessment,
+                    our AI recommends:
                   </p>
 
-                  {/* =================================================
-                      AI PREDICTION CARD
-                  ================================================= */}
+                  <div className="locked-prediction">
 
-                  <div
-                    className="locked-prediction"
-                    style={{
-                      background:
-                        "#ffffff",
-
-                      color:
-                        "#172554",
-
-                      border:
-                        "1px solid #ddd6fe",
-
-                      borderRadius:
-                        "16px",
-
-                      padding:
-                        "18px",
-
-                      display:
-                        "flex",
-
-                      alignItems:
-                        "center",
-
-                      gap:
-                        "15px",
-
-                      boxShadow:
-                        "0 8px 25px rgba(15, 23, 42, 0.12)"
-                    }}
-                  >
-
-                    <span
-                      style={{
-                        fontSize:
-                          "30px",
-
-                        flexShrink:
-                          0
-                      }}
-                    >
+                    <span className="prediction-robot">
                       🤖
                     </span>
 
                     <div>
 
-                      <strong
-                        style={{
-                          color:
-                            "#172554",
-
-                          display:
-                            "block",
-
-                          fontSize:
-                            "18px",
-
-                          fontWeight:
-                            "700",
-
-                          lineHeight:
-                            "1.4"
-                        }}
-                      >
-
+                      <strong>
                         {aiCareer}
-
                       </strong>
 
+                      <small>
+                        AI Confidence:{" "}
+                        {aiConfidence}%
+                      </small>
+
                     </div>
-
                   </div>
-
-                  {/* =================================================
-                      AI REASON
-                  ================================================= */}
-
-
-
                 </>
-
               ) : (
-
                 <>
-
                   <p>
-
-                    Your personalized AI career prediction
-                    will appear here after generating your
-                    AI prediction.
-
+                    Your personalized AI career
+                    prediction will appear here after
+                    generating your AI prediction.
                   </p>
 
                   <div className="locked-prediction">
@@ -2221,61 +1110,61 @@ function Dashboard() {
                       </strong>
 
                       <small>
-                        Generate your AI prediction first.
+                        Generate your AI prediction
+                        first.
                       </small>
 
                     </div>
-
                   </div>
 
                   <button
                     className="secondary-dashboard-button"
                     onClick={() =>
-                      navigate(
+                      goToPage(
                         "/ai-prediction"
                       )
                     }
                   >
-
                     Generate AI Prediction →
-
                   </button>
-
                 </>
-
               )}
-
             </div>
-
           </div>
 
-          {/* =================================================
-              CAREER JOURNEY
-          ================================================= */}
+          {/* ===================================================
+              YOUR CAREER JOURNEY
+          ==================================================== */}
 
           <div className="next-section">
 
             <div className="next-heading">
 
-              <div>
+              <h2>
+                Your Career Journey
+              </h2>
 
-                <h2>
-                  Your Career Journey
-                </h2>
-
-                <p>
-                  Follow these steps to get your AI-powered career recommendation.
-                </p>
-
-              </div>
+              <p>
+                Follow these steps to discover the
+                career that matches your skills and
+                interests.
+              </p>
 
             </div>
 
             <div className="journey-grid">
 
-              {/* STEP 1 */}
+              {/* =================================================
+                  STEP 1
+              ================================================== */}
 
-              <div className="journey-card active-step">
+              <div
+                className={`journey-card ${
+                  dashboardData.profileCompletion >= 100
+                    ? "completed-step"
+                    : "active-step"
+                }`}
+              >
 
                 <div className="journey-number">
                   1
@@ -2286,21 +1175,27 @@ function Dashboard() {
                 </h3>
 
                 <p>
-                  Tell us about yourself.
+                  {dashboardData.profileCompletion >=
+                  100
+                    ? "✓ Profile completed"
+                    : `${dashboardData.profileCompletion}% profile completed`}
                 </p>
 
-                <span>
-                  Current Step
-                </span>
-
               </div>
 
-              <div className="journey-line">
-              </div>
+              <div className="journey-line" />
 
-              {/* STEP 2 */}
+              {/* =================================================
+                  STEP 2 - DYNAMIC SKILLS
+              ================================================== */}
 
-              <div className="journey-card">
+              <div
+                className={`journey-card ${
+                  dashboardData.skillsCount > 0
+                    ? "completed-step"
+                    : ""
+                }`}
+              >
 
                 <div className="journey-number">
                   2
@@ -2310,18 +1205,45 @@ function Dashboard() {
                   Add Skills
                 </h3>
 
-                <p>
-                  Add your technical skills.
-                </p>
+                {skillCareerResult ? (
+                  <div className="journey-skill-result">
+
+                    <p>
+                      Current Best Match
+                    </p>
+
+                    <strong>
+                      {skillCareer}
+                    </strong>
+
+                    <span>
+                      Skill Match:{" "}
+                      {skillMatch}%
+                    </span>
+
+                  </div>
+                ) : (
+                  <p>
+                    Add your technical skills to
+                    discover suitable careers.
+                  </p>
+                )}
 
               </div>
 
-              <div className="journey-line">
-              </div>
+              <div className="journey-line" />
 
-              {/* STEP 3 */}
+              {/* =================================================
+                  STEP 3
+              ================================================== */}
 
-              <div className="journey-card">
+              <div
+                className={`journey-card ${
+                  interestResult
+                    ? "completed-step"
+                    : ""
+                }`}
+              >
 
                 <div className="journey-number">
                   3
@@ -2332,22 +1254,26 @@ function Dashboard() {
                 </h3>
 
                 <p>
-
                   {interestResult
                     ? `✓ ${interestResult.career}`
-                    : "Discover your interests."
-                  }
-
+                    : "Discover your interests."}
                 </p>
 
               </div>
 
-              <div className="journey-line">
-              </div>
+              <div className="journey-line" />
 
-              {/* STEP 4 */}
+              {/* =================================================
+                  STEP 4
+              ================================================== */}
 
-              <div className="journey-card">
+              <div
+                className={`journey-card ${
+                  predictionResult
+                    ? "completed-step"
+                    : ""
+                }`}
+              >
 
                 <div className="journey-number">
                   4
@@ -2358,28 +1284,20 @@ function Dashboard() {
                 </h3>
 
                 <p>
-
                   {predictionResult
                     ? predictionResult.recommendedCareer
-                    : "Get your ideal career."
-                  }
-
+                    : "Get your ideal career."}
                 </p>
 
               </div>
 
             </div>
-
           </div>
 
         </section>
-
       </main>
-
     </div>
-
   );
-
 }
 
 export default Dashboard;

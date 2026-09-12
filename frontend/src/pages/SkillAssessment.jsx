@@ -6,7 +6,6 @@ import skillAssessmentService from "../services/skillAssessmentService";
 import assessmentQuestionService from "../services/assessmentQuestionService";
 import skillService from "../services/skillService";
 
-
 function SkillAssessment() {
 
   const navigate = useNavigate();
@@ -477,6 +476,135 @@ function SkillAssessment() {
 
 
   // =========================================================
+  // ASSESSMENT CATEGORY
+  // =========================================================
+
+  const getAssessmentCategory = (courseName, careerField) => {
+    const course = normalizeName(courseName);
+    const career = normalizeName(careerField);
+
+    const cyberCourses = [
+      "cyber security fundamentals",
+      "ethical hacking",
+      "networking basics",
+      "networking",
+      "cyber security",
+      "cybersecurity",
+      "nmap"
+    ];
+
+    if (
+      cyberCourses.some((name) => course.includes(name)) ||
+      career.includes("cyber security") ||
+      career.includes("cybersecurity")
+    ) {
+      return "cyber_security";
+    }
+
+    const webCourses = [
+      "html",
+      "css",
+      "javascript",
+      "react",
+      "node.js",
+      "nodejs",
+      "web development",
+      "frontend",
+      "backend"
+    ];
+
+    if (
+      webCourses.some((name) => course.includes(name)) ||
+      career.includes("web developer") ||
+      career.includes("frontend developer") ||
+      career.includes("backend developer")
+    ) {
+      return "web";
+    }
+
+    const dataCourses = [
+      "sql",
+      "mysql",
+      "data analysis",
+      "python for data analysis",
+      "python for data science",
+      "pandas and numpy",
+      "power bi",
+      "machine learning",
+      "deep learning",
+      "data science",
+      "data scientist"
+    ];
+
+    if (
+      dataCourses.some((name) => course.includes(name)) ||
+      career.includes("data analyst") ||
+      career.includes("data scientist") ||
+      career.includes("machine learning") ||
+      career.includes("ai / ml")
+    ) {
+      return "data";
+    }
+
+    return "technology";
+  };
+
+  const calculateCategoryScores = (courseResults) => {
+    const categories = {
+      technology: { correct: 0, total: 0 },
+      data: { correct: 0, total: 0 },
+      web: { correct: 0, total: 0 },
+      cyber_security: { correct: 0, total: 0 }
+    };
+
+    (courseResults || []).forEach((course) => {
+      const category = getAssessmentCategory(
+        course.courseName,
+        course.careerField || getCareerFieldFromCourse(course.courseName)
+      );
+
+      if (!categories[category]) return;
+
+      categories[category].correct += Number(course.correct || 0);
+      categories[category].total += Number(course.total || 0);
+    });
+
+    return {
+      technology_score:
+        categories.technology.total > 0
+          ? Math.round(
+              (categories.technology.correct /
+                categories.technology.total) * 100
+            )
+          : 0,
+
+      data_score:
+        categories.data.total > 0
+          ? Math.round(
+              (categories.data.correct /
+                categories.data.total) * 100
+            )
+          : 0,
+
+      web_score:
+        categories.web.total > 0
+          ? Math.round(
+              (categories.web.correct /
+                categories.web.total) * 100
+            )
+          : 0,
+
+      cyber_security_score:
+        categories.cyber_security.total > 0
+          ? Math.round(
+              (categories.cyber_security.correct /
+                categories.cyber_security.total) * 100
+            )
+          : 0
+    };
+  };
+
+  // =========================================================
   // SAVE LATEST ASSESSMENT RESULT
   // =========================================================
 
@@ -485,7 +613,8 @@ function SkillAssessment() {
     totalQuestions,
     percentage,
     courseResults,
-    strongestCareer
+    strongestCareer,
+    categoryScores
   }) => {
 
     const programmingLevel =
@@ -525,6 +654,26 @@ function SkillAssessment() {
 
       courseResults:
         courseResults || [],
+
+      categoryScores:
+        categoryScores || {
+          technology_score: 0,
+          data_score: 0,
+          web_score: 0,
+          cyber_security_score: 0
+        },
+
+      technology_score:
+        categoryScores?.technology_score || 0,
+
+      data_score:
+        categoryScores?.data_score || 0,
+
+      web_score:
+        categoryScores?.web_score || 0,
+
+      cyber_security_score:
+        categoryScores?.cyber_security_score || 0,
 
       completedAt:
         new Date().toISOString()
@@ -1347,6 +1496,23 @@ function SkillAssessment() {
         courseResults
       );
 
+      // ===================================================
+      // CATEGORY-WISE SCORES
+      // ===================================================
+
+      const categoryScores =
+        calculateCategoryScores(courseResults);
+
+      console.log(
+        "CATEGORY SCORES:",
+        categoryScores
+      );
+
+      localStorage.setItem(
+        "latestSkillAssessmentCategoryScores",
+        JSON.stringify(categoryScores)
+      );
+
 
       // ===================================================
       // STRONGEST COURSE
@@ -1444,7 +1610,10 @@ function SkillAssessment() {
           courseResults,
 
         strongestCareer:
-          strongestCourse
+          strongestCourse,
+
+        categoryScores:
+          categoryScores
 
       });
 
@@ -1526,6 +1695,10 @@ function SkillAssessment() {
       "latestSkillAssessmentResult"
     );
 
+    localStorage.removeItem(
+      "latestSkillAssessmentCategoryScores"
+    );
+
 
     window.scrollTo({
 
@@ -1547,7 +1720,6 @@ function SkillAssessment() {
     return (
 
       <div className="page-container">
-
         <div className="form-card">
 
           <h2>

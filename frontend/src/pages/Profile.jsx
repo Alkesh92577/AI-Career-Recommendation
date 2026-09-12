@@ -8,49 +8,65 @@ function Profile() {
   // ==========================================
 
   const [profile, setProfile] = useState({
-
     fullName: "",
     email: "",
     programmingKnowledge: "",
     preferredField: "",
     education: "",
     experience: ""
-
   });
+
 
   // ==========================================
   // STUDENT ID
   // ==========================================
 
-  const [studentId, setStudentId] = useState(null);
+  const [studentId, setStudentId] =
+    useState(null);
+
 
   // ==========================================
   // LOADING / SAVING
   // ==========================================
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [loading, setLoading] =
+    useState(true);
+
+  const [saving, setSaving] =
+    useState(false);
+
 
   // ==========================================
   // MESSAGE
   // ==========================================
 
-  const [message, setMessage] = useState("");
-  const [messageType, setMessageType] = useState("");
+  const [message, setMessage] =
+    useState("");
+
+  const [messageType, setMessageType] =
+    useState("");
+
 
   // ==========================================
   // MESSAGE TIMER
   // ==========================================
 
-  const messageTimer = useRef(null);
+  const messageTimer =
+    useRef(null);
+
 
   // ==========================================
   // SHOW MESSAGE
   // ==========================================
 
-  const showMessage = (text, type) => {
+  const showMessage = (
+    text,
+    type
+  ) => {
 
-    if (messageTimer.current) {
+    if (
+      messageTimer.current
+    ) {
 
       clearTimeout(
         messageTimer.current
@@ -66,11 +82,14 @@ function Profile() {
 
         setMessage("");
         setMessageType("");
-        messageTimer.current = null;
+
+        messageTimer.current =
+          null;
 
       }, 3000);
 
   };
+
 
   // ==========================================
   // CLEAR TIMER
@@ -80,7 +99,9 @@ function Profile() {
 
     return () => {
 
-      if (messageTimer.current) {
+      if (
+        messageTimer.current
+      ) {
 
         clearTimeout(
           messageTimer.current
@@ -91,6 +112,7 @@ function Profile() {
     };
 
   }, []);
+
 
   // ==========================================
   // GET USER ID
@@ -104,39 +126,111 @@ function Profile() {
 
   };
 
+
+  // ==========================================
+  // CHECK FIELD FILLED
+  // ==========================================
+
+  const isFieldFilled = (
+    value
+  ) => {
+
+    if (
+      value === null ||
+      value === undefined
+    ) {
+
+      return false;
+
+    }
+
+    if (
+      typeof value === "string"
+    ) {
+
+      return (
+        value.trim() !== ""
+      );
+
+    }
+
+    return true;
+
+  };
+
+
   // ==========================================
   // PROFILE COMPLETION CALCULATOR
   // ==========================================
 
-  const calculateCompletion = (profileData) => {
+  const calculateCompletion = (
+    profileData
+  ) => {
 
     const fields = [
 
       profileData.fullName,
+
       profileData.email,
+
       profileData.programmingKnowledge,
+
       profileData.preferredField,
+
       profileData.education,
+
       profileData.experience
 
     ];
 
+
     const completed =
-      fields.filter((field) => {
+      fields.filter(
+        (field) =>
+          isFieldFilled(field)
+      ).length;
 
-        return (
-          field !== "" &&
-          field !== null &&
-          field !== undefined
-        );
-
-      }).length;
 
     return Math.round(
-      (completed / fields.length) * 100
+      (
+        completed /
+        fields.length
+      ) * 100
     );
 
   };
+
+
+  // ==========================================
+  // SAVE PROFILE COMPLETION
+  // ==========================================
+
+  const saveCompletion = (
+    profileData
+  ) => {
+
+    const calculatedCompletion =
+      calculateCompletion(
+        profileData
+      );
+
+    localStorage.setItem(
+      "profileCompletion",
+      String(
+        calculatedCompletion
+      )
+    );
+
+    window.dispatchEvent(
+      new Event(
+        "profileUpdated"
+      )
+    );
+
+    return calculatedCompletion;
+
+  };
+
 
   // ==========================================
   // LOAD PROFILE
@@ -144,437 +238,410 @@ function Profile() {
 
   useEffect(() => {
 
-    const loadProfile = async () => {
+    const loadProfile =
+      async () => {
 
-      const userId =
-        getUserId();
+        const userId =
+          getUserId();
 
-      console.log(
-        "Logged-in User ID:",
-        userId
-      );
-
-      if (!userId) {
-
-        showMessage(
-          "User session not found. Please login again.",
-          "error"
-        );
-
-        setLoading(false);
-
-        return;
-
-      }
-
-      try {
-
-        // ======================================
-        // GET PROFILE
-        // ======================================
-
-        const data =
-          await studentService.getByUserId(
-            userId
-          );
-
-        console.log(
-          "Profile Data:",
-          data
-        );
-
-        if (data) {
-
-          // ==================================
-          // SAVE STUDENT ID
-          // ==================================
-
-          setStudentId(
-            data.id
-          );
-
-          localStorage.setItem(
-            "studentId",
-            data.id
-          );
-
-          // ==================================
-          // SET PROFILE
-          // ==================================
-
-          const loadedProfile = {
-
-            fullName:
-              data.fullName || "",
-
-            email:
-              data.email || "",
-
-            programmingKnowledge:
-              data.programmingKnowledge || "",
-
-            preferredField:
-              data.preferredField || "",
-
-            education:
-              data.education || "",
-
-            experience:
-              data.experience ?? ""
-
-          };
-
-          setProfile(
-            loadedProfile
-          );
-
-          // ==================================
-          // CALCULATE COMPLETION
-          // ==================================
-
-          const savedCompletion =
-            calculateCompletion(
-              loadedProfile
-            );
-
-          // ==================================
-          // SAVE COMPLETION
-          // ==================================
-
-          localStorage.setItem(
-            "profileCompletion",
-            savedCompletion
-          );
-
-          console.log(
-            "Profile Completion:",
-            savedCompletion + "%"
-          );
-
-        }
-
-      } catch (error) {
-
-        console.error(
-          "Profile GET Error:",
-          error
-        );
-
-        // ======================================
-        // PROFILE NOT FOUND
-        // ======================================
 
         if (
-          error.response?.status === 404
+          !userId
         ) {
 
-          console.log(
-            "Profile not found. Creating new profile mode."
-          );
-
-          const newProfile = {
-
-            fullName:
-              localStorage.getItem(
-                "userName"
-              ) || "",
-
-            email:
-              localStorage.getItem(
-                "userEmail"
-              ) || "",
-
-            programmingKnowledge: "",
-
-            preferredField: "",
-
-            education: "",
-
-            experience: ""
-
-          };
-
-          setProfile(
-            newProfile
-          );
-
-          localStorage.setItem(
-            "profileCompletion",
-            calculateCompletion(
-              newProfile
-            )
-          );
-
-        } else {
-
           showMessage(
-            "The profile is not loading.",
+            "User session not found. Please login again.",
             "error"
           );
 
+          setLoading(false);
+
+          return;
+
         }
 
-      } finally {
 
-        setLoading(false);
+        try {
 
-      }
+          const data =
+            await studentService.getByUserId(
+              userId
+            );
 
-    };
+
+          if (
+            data
+          ) {
+
+            setStudentId(
+              data.id
+            );
+
+
+            localStorage.setItem(
+              "studentId",
+              data.id
+            );
+
+
+            const loadedProfile = {
+
+              fullName:
+                data.fullName || "",
+
+              email:
+                data.email || "",
+
+              programmingKnowledge:
+                data.programmingKnowledge || "",
+
+              preferredField:
+                data.preferredField || "",
+
+              education:
+                data.education || "",
+
+              experience:
+                data.experience ??
+                ""
+
+            };
+
+
+            setProfile(
+              loadedProfile
+            );
+
+
+            saveCompletion(
+              loadedProfile
+            );
+
+          }
+
+        } catch (
+          error
+        ) {
+
+          console.error(
+            "Profile GET Error:",
+            error
+          );
+
+
+          if (
+            error.response?.status ===
+            404
+          ) {
+
+            const newProfile = {
+
+              fullName:
+                localStorage.getItem(
+                  "userName"
+                ) || "",
+
+              email:
+                localStorage.getItem(
+                  "userEmail"
+                ) || "",
+
+              programmingKnowledge:
+                "",
+
+              preferredField:
+                "",
+
+              education:
+                "",
+
+              experience:
+                ""
+
+            };
+
+
+            setProfile(
+              newProfile
+            );
+
+
+            saveCompletion(
+              newProfile
+            );
+
+          } else {
+
+            showMessage(
+              "The profile is not loading.",
+              "error"
+            );
+
+          }
+
+        } finally {
+
+          setLoading(false);
+
+        }
+
+      };
+
 
     loadProfile();
 
   }, []);
 
+
   // ==========================================
   // HANDLE INPUT
   // ==========================================
 
-  const handleChange = (e) => {
+  const handleChange = (
+    e
+  ) => {
 
     const {
       name,
       value
     } = e.target;
 
+
     setProfile(
-      (previousProfile) => ({
+      (
+        previousProfile
+      ) => ({
 
         ...previousProfile,
 
-        [name]: value
+        [name]:
+          value
 
       })
     );
 
   };
 
+
   // ==========================================
   // SAVE PROFILE
   // ==========================================
 
-  const handleSubmit = async (e) => {
+  const handleSubmit =
+    async (
+      e
+    ) => {
 
-    e.preventDefault();
+      e.preventDefault();
 
-    setSaving(true);
+      setSaving(true);
 
-    setMessage("");
-    setMessageType("");
+      setMessage("");
+      setMessageType("");
 
-    const userId =
-      getUserId();
 
-    console.log(
-      "Saving Profile For User ID:",
-      userId
-    );
+      const userId =
+        getUserId();
 
-    if (!userId) {
 
-      showMessage(
-        "User not found. Please login again.",
-        "error"
-      );
+      if (
+        !userId
+      ) {
 
-      setSaving(false);
-
-      return;
-
-    }
-
-    // ========================================
-    // PREPARE DATA
-    // ========================================
-
-    const studentData = {
-
-      userId:
-        Number(userId),
-
-      fullName:
-        profile.fullName.trim(),
-
-      email:
-        profile.email.trim(),
-
-      programmingKnowledge:
-        profile.programmingKnowledge,
-
-      preferredField:
-        profile.preferredField,
-
-      education:
-        profile.education.trim(),
-
-      experience:
-        profile.experience === ""
-          ? null
-          : Number(profile.experience)
-
-    };
-
-    console.log(
-      "Student Data Sending:",
-      studentData
-    );
-
-    try {
-
-      let data;
-
-      // ======================================
-      // UPDATE
-      // ======================================
-
-      if (studentId) {
-
-        console.log(
-          "Updating Student ID:",
-          studentId
+        showMessage(
+          "User not found. Please login again.",
+          "error"
         );
 
-        data =
-          await studentService.update(
-            studentId,
-            studentData
-          );
+        setSaving(false);
+
+        return;
 
       }
 
-      // ======================================
-      // CREATE
-      // ======================================
 
-      else {
+      const studentData = {
 
-        console.log(
-          "Creating New Student Profile"
-        );
-
-        data =
-          await studentService.create(
-            studentData
-          );
-
-      }
-
-      console.log(
-        "Backend Response:",
-        data
-      );
-
-      // ======================================
-      // SAVE STUDENT ID
-      // ======================================
-
-      setStudentId(
-        data.id
-      );
-
-      localStorage.setItem(
-        "studentId",
-        data.id
-      );
-
-      // ======================================
-      // CREATE UPDATED PROFILE OBJECT
-      // ======================================
-
-      const updatedProfile = {
+        userId:
+          Number(userId),
 
         fullName:
-          data.fullName || "",
+          profile.fullName.trim(),
 
         email:
-          data.email || "",
+          profile.email.trim(),
 
         programmingKnowledge:
-          data.programmingKnowledge || "",
+          profile.programmingKnowledge,
 
         preferredField:
-          data.preferredField || "",
+          profile.preferredField,
 
         education:
-          data.education || "",
+          profile.education.trim(),
 
         experience:
-          data.experience ?? ""
+          profile.experience === ""
+            ? null
+            : Number(
+                profile.experience
+              )
 
       };
 
-      // ======================================
-      // UPDATE STATE
-      // ======================================
 
-      setProfile(
-        updatedProfile
-      );
+      try {
 
-      // ======================================
-      // CALCULATE NEW COMPLETION
-      // ======================================
+        let data;
 
-      const newCompletion =
-        calculateCompletion(
+
+        // ======================================
+        // UPDATE PROFILE
+        // ======================================
+
+        if (
+          studentId
+        ) {
+
+          data =
+            await studentService.update(
+              studentId,
+              studentData
+            );
+
+        }
+
+
+        // ======================================
+        // CREATE PROFILE
+        // ======================================
+
+        else {
+
+          data =
+            await studentService.create(
+              studentData
+            );
+
+        }
+
+
+        // ======================================
+        // SAVE STUDENT ID
+        // ======================================
+
+        setStudentId(
+          data.id
+        );
+
+
+        localStorage.setItem(
+          "studentId",
+          data.id
+        );
+
+
+        // ======================================
+        // UPDATED PROFILE
+        // ======================================
+
+        const updatedProfile = {
+
+          fullName:
+            data.fullName || "",
+
+          email:
+            data.email || "",
+
+          programmingKnowledge:
+            data.programmingKnowledge || "",
+
+          preferredField:
+            data.preferredField || "",
+
+          education:
+            data.education || "",
+
+          experience:
+            data.experience ??
+            ""
+
+        };
+
+
+        // ======================================
+        // UPDATE STATE
+        // ======================================
+
+        setProfile(
           updatedProfile
         );
 
-      console.log(
-        "New Profile Completion:",
-        newCompletion + "%"
-      );
 
-      // ======================================
-      // SAVE COMPLETION IN LOCAL STORAGE
-      // ======================================
+        // ======================================
+        // UPDATE LOCAL USER DATA
+        // ======================================
 
-      localStorage.setItem(
-        "profileCompletion",
-        newCompletion
-      );
+        localStorage.setItem(
+          "userName",
+          updatedProfile.fullName
+        );
 
-      // ======================================
-      // SUCCESS
-      // ======================================
 
-      showMessage(
-        `Profile successfully saved! Completion: ${newCompletion}%`,
-        "success"
-      );
+        localStorage.setItem(
+          "userEmail",
+          updatedProfile.email
+        );
 
-    } catch (error) {
 
-      console.error(
-        "PROFILE SAVE ERROR:",
+        // ======================================
+        // UPDATE COMPLETION
+        // ======================================
+
+        const newCompletion =
+          saveCompletion(
+            updatedProfile
+          );
+
+
+        // ======================================
+        // SUCCESS MESSAGE
+        // ======================================
+
+        showMessage(
+          `Profile successfully saved! Completion: ${newCompletion}%`,
+          "success"
+        );
+
+      } catch (
         error
-      );
+      ) {
 
-      console.error(
-        "Backend Response:",
-        error.response?.data
-      );
+        console.error(
+          "PROFILE SAVE ERROR:",
+          error
+        );
 
-      const backendMessage =
-        error.response?.data?.message ||
-        error.response?.data?.error;
 
-      showMessage(
+        const backendMessage =
+          error.response?.data?.message ||
+          error.response?.data?.error;
 
-        backendMessage ||
-        "The profile is not saving. Check the backend..",
 
-        "error"
+        showMessage(
+          backendMessage ||
+          "The profile is not saving. Check the backend.",
+          "error"
+        );
 
-      );
+      } finally {
 
-    } finally {
+        setSaving(false);
 
-      setSaving(false);
+      }
 
-    }
+    };
 
-  };
 
   // ==========================================
   // CURRENT COMPLETION
@@ -585,24 +652,29 @@ function Profile() {
       profile
     );
 
+
   // ==========================================
   // KEEP LOCAL STORAGE UPDATED
   // ==========================================
 
   useEffect(() => {
 
-    localStorage.setItem(
-      "profileCompletion",
-      completion
+    saveCompletion(
+      profile
     );
 
-  }, [completion]);
+  }, [
+    completion
+  ]);
+
 
   // ==========================================
   // LOADING
   // ==========================================
 
-  if (loading) {
+  if (
+    loading
+  ) {
 
     return (
 
@@ -621,6 +693,7 @@ function Profile() {
     );
 
   }
+
 
   // ==========================================
   // UI
@@ -643,6 +716,7 @@ function Profile() {
         </p>
 
       </div>
+
 
       {/* PROFILE COMPLETION */}
 
@@ -670,15 +744,19 @@ function Profile() {
 
       </div>
 
+
       {/* PROFILE FORM */}
 
       <div className="form-card profile-form-card">
 
         <form
-          onSubmit={handleSubmit}
+          onSubmit={
+            handleSubmit
+          }
         >
 
           <div className="form-grid">
+
 
             {/* FULL NAME */}
 
@@ -692,12 +770,17 @@ function Profile() {
                 type="text"
                 name="fullName"
                 placeholder="Enter your full name"
-                value={profile.fullName}
-                onChange={handleChange}
+                value={
+                  profile.fullName
+                }
+                onChange={
+                  handleChange
+                }
                 required
               />
 
             </div>
+
 
             {/* EMAIL */}
 
@@ -711,14 +794,19 @@ function Profile() {
                 type="email"
                 name="email"
                 placeholder="Enter your email"
-                value={profile.email}
-                onChange={handleChange}
+                value={
+                  profile.email
+                }
+                onChange={
+                  handleChange
+                }
                 required
               />
 
             </div>
 
-            {/* PROGRAMMING */}
+
+            {/* PROGRAMMING KNOWLEDGE */}
 
             <div>
 
@@ -731,7 +819,9 @@ function Profile() {
                 value={
                   profile.programmingKnowledge
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
               >
 
                 <option value="">
@@ -754,6 +844,7 @@ function Profile() {
 
             </div>
 
+
             {/* CAREER FIELD */}
 
             <div>
@@ -767,7 +858,9 @@ function Profile() {
                 value={
                   profile.preferredField
                 }
-                onChange={handleChange}
+                onChange={
+                  handleChange
+                }
               >
 
                 <option value="">
@@ -802,6 +895,7 @@ function Profile() {
 
             </div>
 
+
             {/* EDUCATION */}
 
             <div>
@@ -814,11 +908,16 @@ function Profile() {
                 type="text"
                 name="education"
                 placeholder="Example: B.Tech CSE"
-                value={profile.education}
-                onChange={handleChange}
+                value={
+                  profile.education
+                }
+                onChange={
+                  handleChange
+                }
               />
 
             </div>
+
 
             {/* EXPERIENCE */}
 
@@ -833,28 +932,35 @@ function Profile() {
                 name="experience"
                 placeholder="Example: 1"
                 min="0"
-                value={profile.experience}
-                onChange={handleChange}
+                value={
+                  profile.experience
+                }
+                onChange={
+                  handleChange
+                }
               />
 
             </div>
 
           </div>
 
+
           {/* SAVE BUTTON */}
 
           <button
             type="submit"
             className="main-button profile-save-button"
-            disabled={saving}
+            disabled={
+              saving
+            }
           >
 
             {saving
               ? "Saving Profile..."
-              : "Save Profile →"
-            }
+              : "Save Profile →"}
 
           </button>
+
 
           {/* MESSAGE */}
 
@@ -862,7 +968,8 @@ function Profile() {
 
             <p
               className={
-                messageType === "success"
+                messageType ===
+                "success"
                   ? "success-message"
                   : "error-message"
               }

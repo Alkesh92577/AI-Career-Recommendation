@@ -1,52 +1,118 @@
 import api from "./api";
 
-
 const predictionService = {
 
-  // ==========================================
-  // PREDICT CAREER
-  // ==========================================
+    // ==========================================
+    // PREDICT CAREER
+    // ==========================================
 
-  predict: async (data) => {
+    predict: async (data) => {
 
-    const response =
-      await api.post(
-        "/predictions/predict",
-        data
-      );
+        if (!data) {
 
-    return response.data;
-  },
+            throw new Error(
+                "Prediction data is required."
+            );
+        }
+
+        if (!data.studentId) {
+
+            throw new Error(
+                "Student ID is required for prediction."
+            );
+        }
+
+        console.log(
+            "\n===================================="
+        );
+
+        console.log(
+            "📤 SENDING PREDICTION DATA"
+        );
+
+        console.log(
+            "===================================="
+        );
+
+        console.log(
+            JSON.stringify(
+                data,
+                null,
+                2
+            )
+        );
+
+        const response =
+            await api.post(
+                "/predictions/predict",
+                data
+            );
+
+        console.log(
+            "\n===================================="
+        );
+
+        console.log(
+            "🤖 PREDICTION API RESPONSE"
+        );
+
+        console.log(
+            "===================================="
+        );
+
+        console.log(
+            JSON.stringify(
+                response.data,
+                null,
+                2
+            )
+        );
+
+        console.log(
+            "===================================="
+        );
+
+        return response.data;
+    },
 
 
-  // ==========================================
-  // GET PREDICTIONS BY STUDENT ID
-  // ==========================================
+    // ==========================================
+    // GET PREDICTIONS BY STUDENT ID
+    // ==========================================
 
-  getByStudentId: async (studentId) => {
+    getByStudentId: async (
+        studentId
+    ) => {
 
-    const response =
-      await api.get(
-        `/predictions/student/${studentId}`
-      );
+        if (!studentId) {
 
-    return response.data;
-  },
+            throw new Error(
+                "Student ID is required."
+            );
+        }
+
+        const response =
+            await api.get(
+                `/predictions/student/${studentId}`
+            );
+
+        return response.data;
+    },
 
 
-  // ==========================================
-  // GET ALL PREDICTIONS
-  // ==========================================
+    // ==========================================
+    // GET ALL PREDICTIONS
+    // ==========================================
 
-  getAll: async () => {
+    getAll: async () => {
 
-    const response =
-      await api.get(
-        "/predictions"
-      );
+        const response =
+            await api.get(
+                "/predictions"
+            );
 
-    return response.data;
-  }
+        return response.data;
+    }
 
 };
 

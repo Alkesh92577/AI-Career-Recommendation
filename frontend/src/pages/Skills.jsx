@@ -1,8 +1,12 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-
 import studentService from "../services/studentService";
 import skillService from "../services/skillService";
+
+import {
+  calculateCareerScores,
+  getBestCareer
+} from "../utils/careerRecommendation";
 
 
 function Skills() {
@@ -15,10 +19,8 @@ function Skills() {
   // ==========================================
 
   const [skill, setSkill] = useState({
-
     skillName: "",
     level: ""
-
   });
 
 
@@ -27,6 +29,18 @@ function Skills() {
   // ==========================================
 
   const [skills, setSkills] = useState([]);
+
+
+  // ==========================================
+  // CAREER RECOMMENDATION
+  // ==========================================
+
+  const [careerRecommendation, setCareerRecommendation] =
+    useState({
+      career: "",
+      score: 0,
+      allScores: []
+    });
 
 
   // ==========================================
@@ -119,12 +133,6 @@ function Skills() {
 
   // ==========================================
   // NORMALIZE SKILL NAME
-  //
-  // Java
-  // java
-  // JAVA
-  //
-  // Teeno ko same maana jayega.
   // ==========================================
 
   const normalizeSkillName = (skillName) => {
@@ -140,6 +148,155 @@ function Skills() {
       .trim()
       .toLowerCase()
       .replace(/\s+/g, " ");
+
+  };
+
+
+  // ==========================================
+  // SAVE CAREER RECOMMENDATION
+  // ==========================================
+
+  const saveCareerRecommendation = (
+    recommendation
+  ) => {
+
+    if (
+      !recommendation ||
+      !recommendation.career
+    ) {
+
+      localStorage.removeItem(
+        "latestSkillCareerRecommendation"
+      );
+
+      return;
+
+    }
+
+
+    const recommendationData = {
+
+      career:
+        recommendation.career,
+
+      score:
+        recommendation.score,
+
+      allScores:
+        recommendation.allScores || [],
+
+      updatedAt:
+        new Date().toISOString()
+
+    };
+
+
+    localStorage.setItem(
+      "latestSkillCareerRecommendation",
+      JSON.stringify(
+        recommendationData
+      )
+    );
+
+
+    console.log(
+      "💾 Saved Career Recommendation:",
+      recommendationData
+    );
+
+  };
+
+
+  // ==========================================
+  // CALCULATE CAREER RECOMMENDATION
+  // ==========================================
+
+  const updateCareerRecommendation = (
+    currentSkills
+  ) => {
+
+    if (
+      !currentSkills ||
+      currentSkills.length === 0
+    ) {
+
+      const emptyRecommendation = {
+
+        career: "",
+
+        score: 0,
+
+        allScores: []
+
+      };
+
+
+      setCareerRecommendation(
+        emptyRecommendation
+      );
+
+
+      localStorage.removeItem(
+        "latestSkillCareerRecommendation"
+      );
+
+
+      return;
+
+    }
+
+
+    const recommendation =
+      getBestCareer(
+        currentSkills
+      );
+
+
+    console.log(
+      "\n===================================="
+    );
+
+    console.log(
+      "🎯 CAREER RECOMMENDATION"
+    );
+
+    console.log(
+      "===================================="
+    );
+
+    console.log(
+      "Skills:",
+      currentSkills
+    );
+
+    console.log(
+      "Best Career:",
+      recommendation.career
+    );
+
+    console.log(
+      "Career Match:",
+      recommendation.score + "%"
+    );
+
+    console.log(
+      "All Career Scores:",
+      recommendation.allScores
+    );
+
+    console.log(
+      "====================================\n"
+    );
+
+
+    setCareerRecommendation(
+      recommendation
+    );
+
+
+    saveCareerRecommendation(
+      recommendation
+    );
 
   };
 
@@ -246,14 +403,17 @@ function Skills() {
 
 
         // ====================================
-        // REMOVE DUPLICATES FROM DISPLAY
-        //
-        // Agar database me purani duplicate
-        // rows hain to frontend me same skill
-        // baar-baar show nahi hogi.
-        //
-        // Lekin database duplicates ko manually
-        // delete karna phir bhi better hai.
+        // SAFETY CHECK
+        // ====================================
+
+        const backendSkills =
+          Array.isArray(data)
+            ? data
+            : [];
+
+
+        // ====================================
+        // REMOVE DUPLICATES
         // ====================================
 
         const uniqueSkills = [];
@@ -261,33 +421,50 @@ function Skills() {
         const skillNames = new Set();
 
 
-        data.forEach((item) => {
+        backendSkills.forEach(
+          (item) => {
 
-          const normalized =
-            normalizeSkillName(
-              item.skillName
-            );
+            const normalized =
+              normalizeSkillName(
+                item.skillName
+              );
 
 
-          if (
-            normalized &&
-            !skillNames.has(normalized)
-          ) {
+            if (
+              normalized &&
+              !skillNames.has(
+                normalized
+              )
+            ) {
 
-            skillNames.add(
-              normalized
-            );
+              skillNames.add(
+                normalized
+              );
 
-            uniqueSkills.push(
-              item
-            );
+              uniqueSkills.push(
+                item
+              );
+
+            }
 
           }
+        );
 
-        });
 
+        // ====================================
+        // SET SKILLS
+        // ====================================
 
         setSkills(
+          uniqueSkills
+        );
+
+
+        // ====================================
+        // CALCULATE CAREER
+        // ====================================
+
+        updateCareerRecommendation(
           uniqueSkills
         );
 
@@ -330,6 +507,29 @@ function Skills() {
     loadSkills();
 
   }, []);
+
+
+  // ==========================================
+  // AUTOMATIC CAREER UPDATE
+  //
+  // Jab skill add/delete hogi,
+  // recommendation automatically update hogi.
+  // ==========================================
+
+  useEffect(() => {
+
+    if (loading) {
+
+      return;
+
+    }
+
+
+    updateCareerRecommendation(
+      skills
+    );
+
+  }, [skills]);
 
 
   // ==========================================
@@ -413,15 +613,7 @@ function Skills() {
 
 
     // ========================================
-    // FRONTEND DUPLICATE CHECK
-    //
-    // Same student ke liye:
-    //
-    // Java
-    // java
-    // JAVA
-    //
-    // duplicate maana jayega.
+    // DUPLICATE CHECK
     // ========================================
 
     const alreadyExists =
@@ -495,10 +687,7 @@ function Skills() {
 
 
       // ======================================
-      // EXTRA DUPLICATE SAFETY
-      //
-      // Backend se save hone ke baad bhi
-      // display list me duplicate nahi aayega.
+      // UPDATE SKILLS
       // ======================================
 
       setSkills(
@@ -572,10 +761,6 @@ function Skills() {
       );
 
 
-      // ======================================
-      // GET BACKEND ERROR MESSAGE
-      // ======================================
-
       const backendMessage =
         error.response?.data?.message;
 
@@ -607,7 +792,9 @@ function Skills() {
 
     try {
 
-      await skillService.delete(id);
+      await skillService.delete(
+        id
+      );
 
 
       setSkills(
@@ -690,6 +877,51 @@ function Skills() {
 
 
   // ==========================================
+  // CAREER DISPLAY NAME
+  // ==========================================
+
+  const getCareerDescription = (
+    career
+  ) => {
+
+    const descriptions = {
+
+      "Software Developer":
+        "Strong general programming and software development skills.",
+
+      "Java Backend Developer":
+        "Strong Java, Spring Boot and database-oriented backend skills.",
+
+      "Web Developer":
+        "Strong HTML, CSS and JavaScript web development skills.",
+
+      "Full Stack Developer":
+        "Strong frontend and backend web development skills.",
+
+      "Data Analyst":
+        "Strong data analysis, SQL and analytical skills.",
+
+      "Machine Learning Engineer":
+        "Strong Python, machine learning and data analysis skills.",
+
+      "Database Developer":
+        "Strong SQL, MySQL and database development skills.",
+
+      "Data Engineer":
+        "Strong programming, SQL and data engineering related skills."
+
+    };
+
+
+    return (
+      descriptions[career] ||
+      "Career recommendation based on your selected skills."
+    );
+
+  };
+
+
+  // ==========================================
   // LOADING
   // ==========================================
 
@@ -721,7 +953,6 @@ function Skills() {
   return (
 
     <div className="page-container">
-
 
       {/* ==================================== */}
       {/* HEADER */}
@@ -943,10 +1174,168 @@ function Skills() {
 
 
       {/* ==================================== */}
+      {/* CAREER RECOMMENDATION */}
+      {/* ==================================== */}
+
+      {careerRecommendation.career && (
+
+        <div
+          className="form-card"
+          style={{
+            marginTop: "20px",
+            border: "2px solid #e5e7eb"
+          }}
+        >
+
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "flex-start",
+              gap: "20px",
+              flexWrap: "wrap"
+            }}
+          >
+
+            <div>
+
+              <p
+                style={{
+                  margin: "0 0 8px",
+                  fontSize: "14px",
+                  fontWeight: "600"
+                }}
+              >
+                🎯 Recommended Career
+              </p>
+
+
+              <h2
+                style={{
+                  margin: "0 0 8px"
+                }}
+              >
+                {careerRecommendation.career}
+              </h2>
+
+
+              <p
+                style={{
+                  margin: 0
+                }}
+              >
+                {getCareerDescription(
+                  careerRecommendation.career
+                )}
+              </p>
+
+            </div>
+
+
+            <div
+              style={{
+                minWidth: "110px",
+                textAlign: "center",
+                padding: "15px",
+                borderRadius: "12px",
+                background: "#f5f5f5"
+              }}
+            >
+
+              <strong
+                style={{
+                  display: "block",
+                  fontSize: "24px"
+                }}
+              >
+                {careerRecommendation.score}%
+              </strong>
+
+
+              <span>
+                Skill Match
+              </span>
+
+            </div>
+
+          </div>
+
+
+          {/* ================================= */}
+          {/* TOP CAREER MATCHES */}
+          {/* ================================= */}
+
+          {careerRecommendation.allScores &&
+            careerRecommendation.allScores.length > 1 && (
+
+            <div
+              style={{
+                marginTop: "25px"
+              }}
+            >
+
+              <h3>
+                Top Career Matches
+              </h3>
+
+
+              {careerRecommendation.allScores
+                .slice(0, 3)
+                .map(
+                  (item, index) => (
+
+                    <div
+                      key={item.career}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        gap: "15px",
+                        padding: "12px 0",
+                        borderBottom:
+                          "1px solid #e5e7eb"
+                      }}
+                    >
+
+                      <span>
+
+                        <strong>
+                          {index + 1}.
+                        </strong>{" "}
+
+                        {item.career}
+
+                      </span>
+
+
+                      <strong>
+                        {item.score}%
+                      </strong>
+
+                    </div>
+
+                  )
+                )}
+
+            </div>
+
+          )}
+
+        </div>
+
+      )}
+
+
+      {/* ==================================== */}
       {/* SKILLS LIST */}
       {/* ==================================== */}
 
-      <div className="form-card">
+      <div
+        className="form-card"
+        style={{
+          marginTop: "20px"
+        }}
+      >
 
         <h2>
           Your Skills

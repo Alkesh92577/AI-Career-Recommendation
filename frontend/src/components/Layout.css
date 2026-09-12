@@ -1,0 +1,491 @@
+/* ================================= */
+/* COMMON LAYOUT */
+/* ================================= */
+
+.common-layout {
+
+  min-height: 100vh;
+
+  width: 100%;
+
+}
+
+
+/* ================================= */
+/* HOME BUTTON */
+/* ================================= */
+
+.common-home-button {
+
+  position: fixed;
+
+  top: 20px;
+
+  right: 25px;
+
+  left: auto;
+
+  z-index: 10000;
+
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 8px;
+
+
+  padding: 9px 17px;
+
+
+  border: none;
+
+  border-radius: 14px;
+
+
+  background: linear-gradient(
+    135deg,
+    #4338ca,
+    #7c3aed
+  );
+
+
+  color: white;
+
+  font-size: 16px;
+
+  font-weight: 700;
+
+
+  cursor: pointer;
+
+
+  box-shadow:
+    0 6px 16px
+    rgba(67, 56, 202, 0.25);
+
+}
+
+
+/* Home Icon */
+
+.common-home-icon {
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+
+  width: 28px;
+
+  height: 28px;
+
+
+  border-radius: 9px;
+
+
+  background:
+    rgba(255, 255, 255, 0.15);
+
+
+  font-size: 18px;
+
+}
+
+
+/* ================================= */
+/* MOBILE MENU BUTTON */
+/* ================================= */
+
+.mobile-menu-button {
+
+  display: none;
+
+
+  position: fixed;
+
+  top: 18px;
+
+  left: 18px;
+
+  z-index: 10001;
+
+
+  width: 42px;
+
+  height: 42px;
+
+
+  border: none;
+
+  border-radius: 12px;
+
+
+  background: linear-gradient(
+    135deg,
+    #4338ca,
+    #7c3aed
+  );
+
+
+  color: white;
+
+  font-size: 23px;
+
+  cursor: pointer;
+
+
+  box-shadow:
+    0 5px 15px
+    rgba(67, 56, 202, 0.25);
+
+}
+
+
+/* ================================= */
+/* MOBILE SIDEBAR */
+/* ================================= */
+
+.mobile-sidebar {
+
+  display: none;
+
+}
+
+
+/* ================================= */
+/* OVERLAY */
+/* ================================= */
+
+.menu-overlay {
+
+  display: none;
+
+}
+
+
+/* ================================= */
+/* MOBILE VIEW */
+/* ================================= */
+
+@media (max-width: 768px) {
+
+
+  /* Mobile Menu Button */
+
+  .mobile-menu-button {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+  }
+
+
+  /* Home Button Mobile */
+
+  .common-home-button {
+
+    top: 18px;
+
+    right: 18px;
+
+    padding: 8px 14px;
+
+    font-size: 15px;
+
+    border-radius: 12px;
+
+    z-index: 10002;
+
+  }
+
+
+  .common-home-icon {
+
+    width: 26px;
+
+    height: 26px;
+
+    font-size: 16px;
+
+  }
+
+
+  /* Mobile Sidebar */
+
+  .mobile-sidebar {
+
+    display: block;
+
+
+    position: fixed;
+
+    top: 0;
+
+    left: -100%;
+
+
+    width: 82%;
+
+    max-width: 340px;
+
+    height: 100vh;
+
+
+    background: #1d1c3d;
+
+
+    z-index: 20000;
+
+
+    overflow-y: auto;
+
+
+    transition:
+      left 0.3s ease;
+
+
+    padding:
+      30px 20px;
+
+
+    box-sizing: border-box;
+
+  }
+
+
+  /* Sidebar Open */
+
+  .mobile-sidebar.active {
+
+    left: 0;
+
+  }
+
+
+  /* Overlay */
+
+  .menu-overlay {
+
+    display: block;
+
+
+    position: fixed;
+
+    top: 0;
+
+    left: 0;
+
+    right: 0;
+
+    bottom: 0;
+
+
+    background:
+      rgba(0, 0, 0, 0.45);
+
+
+    z-index: 15000;
+
+  }
+
+
+  /* Close Button */
+
+  .close-menu-button {
+
+    position: absolute;
+
+    top: 15px;
+
+    right: 15px;
+
+
+    width: 38px;
+
+    height: 38px;
+
+
+    border: none;
+
+    border-radius: 50%;
+
+
+    background:
+      rgba(255, 255, 255, 0.1);
+
+
+    color: white;
+
+    font-size: 28px;
+
+    cursor: pointer;
+
+  }
+
+
+  /* Logo */
+
+  .mobile-logo {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 14px;
+
+
+    margin-top: 25px;
+
+    margin-bottom: 45px;
+
+  }
+
+
+  .mobile-logo-icon {
+
+    display: flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+
+    width: 55px;
+
+    height: 55px;
+
+
+    border-radius: 18px;
+
+
+    background:
+      linear-gradient(
+        135deg,
+        #5140d2,
+        #803ce3
+      );
+
+
+    color: white;
+
+    font-size: 25px;
+
+  }
+
+
+  .mobile-logo h2 {
+
+    margin: 0;
+
+    color: white;
+
+    font-size: 23px;
+
+  }
+
+
+  .mobile-logo p {
+
+    margin-top: 5px;
+
+    color: #b5b4c9;
+
+    font-size: 13px;
+
+  }
+
+
+  /* Navigation */
+
+  .mobile-nav {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+
+  }
+
+
+  .menu-heading {
+
+    margin:
+
+      20px 0 8px 12px;
+
+
+    color: #8e8ca8;
+
+
+    font-size: 11px;
+
+    font-weight: 700;
+
+    letter-spacing: 2px;
+
+  }
+
+
+  .mobile-nav button {
+
+    display: flex;
+
+    align-items: center;
+
+    gap: 18px;
+
+
+    width: 100%;
+
+
+    padding:
+
+      16px 18px;
+
+
+    border: none;
+
+    border-radius: 14px;
+
+
+    background: transparent;
+
+
+    color: #d0cedb;
+
+
+    font-size: 16px;
+
+
+    text-align: left;
+
+
+    cursor: pointer;
+
+  }
+
+
+  .mobile-nav button:hover {
+
+    background:
+      linear-gradient(
+        90deg,
+        #4f3fc4,
+        #7938d9
+      );
+
+
+    color: white;
+
+  }
+
+}

@@ -1,28 +1,31 @@
 import { useEffect, useState } from "react";
 import courseService from "../services/courseService";
 
-
 function Courses() {
+
 
   // ==========================================
   // COURSES
   // ==========================================
 
-  const [courses, setCourses] = useState([]);
+  const [courses, setCourses] =
+    useState([]);
 
 
   // ==========================================
   // LOADING
   // ==========================================
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
 
   // ==========================================
   // ERROR
   // ==========================================
 
-  const [error, setError] = useState("");
+  const [error, setError] =
+    useState("");
 
 
   // ==========================================
@@ -38,13 +41,21 @@ function Courses() {
   // ==========================================
 
   const careers = [
+
     "All",
+
     "Software Developer",
+
     "Data Analyst",
+
     "Web Developer",
+
     "Data Scientist",
+
     "AI / ML Engineer",
+
     "Cyber Security"
+
   ];
 
 
@@ -54,56 +65,83 @@ function Courses() {
 
   useEffect(() => {
 
-    const loadCourses = async () => {
 
-      try {
-
-        setLoading(true);
-
-        setError("");
+    const loadCourses =
+      async () => {
 
 
-        const data =
-          await courseService.getAllCourses();
+        try {
 
 
-        console.log(
-          "Courses loaded:",
-          data
-        );
+          setLoading(true);
+
+          setError("");
 
 
-        setCourses(
-          Array.isArray(data)
-            ? data
-            : []
-        );
+          const data =
+            await courseService
+              .getAllCourses();
 
 
-      } catch (error) {
-
-        console.error(
-          "COURSES LOAD ERROR:",
-          error
-        );
+          console.log(
+            "COURSES API RESPONSE:",
+            data
+          );
 
 
-        setError(
-          error.response?.data?.message ||
-          "Courses are not loading.."
-        );
+          if (Array.isArray(data)) {
+
+            setCourses(data);
+
+          } else {
+
+            console.error(
+              "Invalid courses response:",
+              data
+            );
+
+            setCourses([]);
+
+          }
 
 
-      } finally {
+        } catch (error) {
 
-        setLoading(false);
 
-      }
+          console.error(
+            "COURSES LOAD ERROR:",
+            error
+          );
 
-    };
+
+          setError(
+
+            error.response?.data?.message ||
+
+            error.message ||
+
+            "Courses are not loading."
+
+          );
+
+
+          setCourses([]);
+
+
+        } finally {
+
+
+          setLoading(false);
+
+
+        }
+
+
+      };
 
 
     loadCourses();
+
 
   }, []);
 
@@ -113,24 +151,33 @@ function Courses() {
   // ==========================================
 
   const filteredCourses =
+
     selectedCareer === "All"
+
       ? courses
+
       : courses.filter(
           (course) =>
-            course.career === selectedCareer
+
+            course.career?.trim()
+              .toLowerCase() ===
+
+            selectedCareer
+              .trim()
+              .toLowerCase()
         );
 
 
   // ==========================================
-  // LOADING SCREEN
+  // LOADING
   // ==========================================
 
   if (loading) {
 
+
     return (
 
       <div className="page-container">
-
         <div className="form-card">
 
           <h2>
@@ -138,7 +185,7 @@ function Courses() {
           </h2>
 
           <p>
-            Courses are loading.
+            Please wait while courses are loading.
           </p>
 
         </div>
@@ -146,6 +193,7 @@ function Courses() {
       </div>
 
     );
+
 
   }
 
@@ -159,15 +207,14 @@ function Courses() {
     <div className="page-container">
 
 
-      {/* ====================================== */}
       {/* HEADER */}
-      {/* ====================================== */}
 
       <div className="page-header">
 
         <h1>
           📚 Recommended Courses
         </h1>
+
 
         <p>
           Check out courses and learning resources relevant to your career.
@@ -176,9 +223,7 @@ function Courses() {
       </div>
 
 
-      {/* ====================================== */}
-      {/* ERROR MESSAGE */}
-      {/* ====================================== */}
+      {/* ERROR */}
 
       {error && (
 
@@ -196,9 +241,7 @@ function Courses() {
       )}
 
 
-      {/* ====================================== */}
-      {/* CAREER FILTER */}
-      {/* ====================================== */}
+      {/* SELECT CAREER */}
 
       <div
         className="form-card"
@@ -214,37 +257,67 @@ function Courses() {
 
         <div
           style={{
+
             display: "flex",
+
             flexWrap: "wrap",
+
             gap: "10px",
+
             marginTop: "15px"
+
           }}
         >
 
           {careers.map(
+
             (career) => (
 
               <button
+
                 key={career}
+
                 type="button"
+
                 onClick={() =>
                   setSelectedCareer(career)
                 }
+
                 style={{
-                  padding: "10px 18px",
-                  borderRadius: "10px",
-                  border: "none",
-                  cursor: "pointer",
-                  fontWeight: "600",
+
+                  padding:
+                    "10px 18px",
+
+                  borderRadius:
+                    "10px",
+
+                  border:
+                    "none",
+
+                  cursor:
+                    "pointer",
+
+                  fontWeight:
+                    "600",
+
                   background:
+
                     selectedCareer === career
+
                       ? "linear-gradient(90deg,#4f46e5,#9333ea)"
+
                       : "#e5e7eb",
+
                   color:
+
                     selectedCareer === career
+
                       ? "white"
+
                       : "#111827"
+
                 }}
+
               >
 
                 {career}
@@ -252,6 +325,7 @@ function Courses() {
               </button>
 
             )
+
           )}
 
         </div>
@@ -259,9 +333,7 @@ function Courses() {
       </div>
 
 
-      {/* ====================================== */}
       {/* COURSE COUNT */}
-      {/* ====================================== */}
 
       <div
         className="form-card"
@@ -274,26 +346,27 @@ function Courses() {
           📖 Available Courses
         </h2>
 
+
         <p>
 
           {filteredCourses.length}{" "}
+
           {filteredCourses.length === 1
             ? "course"
-            : "courses"}{" "}
+            : "courses"}
 
           {selectedCareer !== "All" &&
-            `for ${selectedCareer}`}
+            ` for ${selectedCareer}`}
 
         </p>
 
       </div>
 
 
-      {/* ====================================== */}
       {/* NO COURSES */}
-      {/* ====================================== */}
 
       {filteredCourses.length === 0 ? (
+
 
         <div className="form-card">
 
@@ -301,64 +374,96 @@ function Courses() {
             😔 No Courses Found
           </h2>
 
+
           <p>
-            Courses for this career are not currently available.
+
+            {courses.length === 0
+
+              ? "No courses are currently available in the database."
+
+              : `No courses found for ${selectedCareer}.`
+
+            }
+
           </p>
 
         </div>
 
+
       ) : (
 
 
-        /* ==================================== */
-        /* COURSE GRID */
-        /* ==================================== */
-
         <div
+
           style={{
-            display: "grid",
+
+            display:
+              "grid",
+
             gridTemplateColumns:
               "repeat(auto-fit, minmax(300px, 1fr))",
-            gap: "20px"
+
+            gap:
+              "20px"
+
           }}
+
         >
 
+
           {filteredCourses.map(
+
             (course) => (
 
+
               <div
+
                 key={course.id}
+
                 className="form-card"
+
                 style={{
-                  margin: 0,
-                  display: "flex",
-                  flexDirection: "column",
-                  justifyContent: "space-between"
+
+                  margin:
+                    0,
+
+                  display:
+                    "flex",
+
+                  flexDirection:
+                    "column",
+
+                  justifyContent:
+                    "space-between"
+
                 }}
+
               >
 
 
-                {/* ============================ */}
-                {/* COURSE INFO */}
-                {/* ============================ */}
-
                 <div>
 
+
                   <div
+
                     style={{
-                      fontSize: "40px",
-                      marginBottom: "10px"
+
+                      fontSize:
+                        "40px",
+
+                      marginBottom:
+                        "10px"
+
                     }}
+
                   >
+
                     📚
+
                   </div>
 
 
-                  <h2
-                    style={{
-                      marginBottom: "10px"
-                    }}
-                  >
+                  <h2>
 
                     {course.courseName ||
                       "Course"}
@@ -366,80 +471,100 @@ function Courses() {
                   </h2>
 
 
-                  {/* CAREER */}
-
                   {course.career && (
 
-                    <p
-                      style={{
-                        fontWeight: "600",
-                        marginBottom: "8px"
-                      }}
-                    >
+                    <p>
 
-                      🎯 {course.career}
+                      🎯{" "}
+
+                      <strong>
+                        Career:
+                      </strong>{" "}
+
+                      {course.career}
 
                     </p>
 
                   )}
 
-
-                  {/* PLATFORM */}
 
                   {course.platform && (
 
                     <p>
+
                       🏢{" "}
+
                       <strong>
                         Platform:
                       </strong>{" "}
+
                       {course.platform}
+
                     </p>
 
                   )}
 
-
-                  {/* DURATION */}
 
                   {course.duration && (
 
                     <p>
+
                       ⏱️{" "}
+
                       <strong>
                         Duration:
                       </strong>{" "}
+
                       {course.duration}
+
                     </p>
 
                   )}
 
+
                 </div>
 
-
-                {/* ============================ */}
-                {/* COURSE BUTTON */}
-                {/* ============================ */}
 
                 {course.courseUrl && (
 
                   <div
                     style={{
-                      marginTop: "20px"
+                      marginTop:
+                        "20px"
                     }}
                   >
 
                     <a
-                      href={course.courseUrl}
+
+                      href={
+                        course.courseUrl
+                      }
+
                       target="_blank"
+
                       rel="noopener noreferrer"
+
                       className="main-button"
+
                       style={{
-                        display: "inline-block",
-                        textDecoration: "none",
-                        textAlign: "center",
-                        width: "100%",
-                        boxSizing: "border-box"
+
+                        display:
+                          "inline-block",
+
+                        textDecoration:
+                          "none",
+
+                        textAlign:
+                          "center",
+
+                        width:
+                          "100%",
+
+                        boxSizing:
+                          "border-box"
+
                       }}
+
                     >
 
                       🚀 Start Course
@@ -450,10 +575,13 @@ function Courses() {
 
                 )}
 
+
               </div>
 
             )
+
           )}
+
 
         </div>
 
@@ -463,6 +591,7 @@ function Courses() {
     </div>
 
   );
+
 
 }
 
