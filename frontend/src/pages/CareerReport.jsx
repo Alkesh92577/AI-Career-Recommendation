@@ -7,8 +7,8 @@ import { Directory, Filesystem } from "@capacitor/filesystem";
 import { Share } from "@capacitor/share";
 import studentService from "../services/studentService";
 
-const PREDICTION_API="https://ai-career-recommendation-production.up.railway.app/api/predictions";
-const COURSE_API="https://ai-career-recommendation-production.up.railway.app/api/courses";
+const PREDICTION_API="https://ai-career-backend-vj8d.onrender.com/api/predictions";
+const COURSE_API="https://ai-career-backend-vj8d.onrender.com/api/courses";
 
 function CareerReport(){
  const [student,setStudent]=useState(null),[prediction,setPrediction]=useState(null),[courses,setCourses]=useState([]),[loading,setLoading]=useState(true),[error,setError]=useState(""),[pdfLoading,setPdfLoading]=useState(false);
