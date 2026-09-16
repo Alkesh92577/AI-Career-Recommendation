@@ -19,6 +19,10 @@ import java.util.List;
 @Service
 public class DashboardService {
 
+    // =====================================================
+    // REPOSITORIES
+    // =====================================================
+
     private final StudentRepository studentRepository;
 
     private final PredictionRepository predictionRepository;
@@ -51,6 +55,119 @@ public class DashboardService {
         this.roadmapProgressRepository = roadmapProgressRepository;
 
         this.skillRepository = skillRepository;
+    }
+
+
+    // =====================================================
+    // HELPER METHOD
+    // CHECK STRING IS FILLED
+    // =====================================================
+
+    private boolean isFilled(String value) {
+
+        return value != null &&
+                !value.trim().isEmpty();
+    }
+
+
+    // =====================================================
+    // PROFILE COMPLETION
+    //
+    // SAME AS Profile.jsx
+    //
+    // TOTAL = 6 FIELDS
+    //
+    // 1. fullName
+    // 2. email
+    // 3. programmingKnowledge
+    // 4. preferredField
+    // 5. education
+    // 6. experience
+    // =====================================================
+
+    private int calculateProfileCompletion(Student student) {
+
+        int completedFields = 0;
+
+        int totalFields = 6;
+
+
+        // =================================================
+        // 1. FULL NAME
+        // =================================================
+
+        if (isFilled(student.getFullName())) {
+
+            completedFields++;
+        }
+
+
+        // =================================================
+        // 2. EMAIL
+        // =================================================
+
+        if (isFilled(student.getEmail())) {
+
+            completedFields++;
+        }
+
+
+        // =================================================
+        // 3. PROGRAMMING KNOWLEDGE
+        // =================================================
+
+        if (isFilled(student.getProgrammingKnowledge())) {
+
+            completedFields++;
+        }
+
+
+        // =================================================
+        // 4. PREFERRED CAREER FIELD
+        // =================================================
+
+        if (isFilled(student.getPreferredField())) {
+
+            completedFields++;
+        }
+
+
+        // =================================================
+        // 5. EDUCATION
+        // =================================================
+
+        if (isFilled(student.getEducation())) {
+
+            completedFields++;
+        }
+
+
+        // =================================================
+        // 6. EXPERIENCE
+        //
+        // 0 years is also a valid value.
+        // =================================================
+
+        if (student.getExperience() != null) {
+
+            completedFields++;
+        }
+
+
+        // =================================================
+        // CALCULATE %
+        // =================================================
+
+        int completion =
+                (int) Math.round(
+                        ((double) completedFields / totalFields) * 100
+                );
+
+
+        return Math.min(
+                100,
+                Math.max(0, completion)
+        );
     }
 
 
@@ -95,27 +212,9 @@ public class DashboardService {
         String name = "Student";
 
 
-        try {
+        if (isFilled(student.getFullName())) {
 
-            /*
-             * IMPORTANT:
-             *
-             * Student model me field fullName hai.
-             *
-             * Isliye getName() nahi,
-             * getFullName() use karna hai.
-             */
-
-            if (
-                    student.getFullName() != null &&
-                    !student.getFullName().isBlank()
-            ) {
-
-                name =
-                        student.getFullName();
-            }
-
-        } catch (Exception ignored) {
+            name = student.getFullName();
         }
 
 
@@ -125,111 +224,19 @@ public class DashboardService {
         // =================================================
         // 4. PROFILE COMPLETION
         // =================================================
+        //
+        // IMPORTANT:
+        //
+        // Dashboard aur Profile.jsx dono same
+        // 6 fields use karenge.
+        //
+        // Academic details / skills / phone /
+        // address yahan count nahi honge.
+        //
+        // =================================================
 
-        int completedProfileFields = 0;
-
-        int totalProfileFields = 7;
-
-
-        // NAME
-
-        try {
-
-            if (
-                    student.getFullName() != null &&
-                    !student.getFullName().isBlank()
-            ) {
-
-                completedProfileFields++;
-            }
-
-        } catch (Exception ignored) {
-        }
-
-
-        // EMAIL
-
-        try {
-
-            if (
-                    student.getEmail() != null &&
-                    !student.getEmail().isBlank()
-            ) {
-
-                completedProfileFields++;
-            }
-
-        } catch (Exception ignored) {
-        }
-
-
-        // 10th MARKS
-
-        if (
-                student.getTenthMarks() != null
-        ) {
-
-            completedProfileFields++;
-        }
-
-
-        // 12th MARKS
-
-        if (
-                student.getTwelfthMarks() != null
-        ) {
-
-            completedProfileFields++;
-        }
-
-
-        // GRADUATION MARKS
-
-        if (
-                student.getGraduationMarks() != null
-        ) {
-
-            completedProfileFields++;
-        }
-
-
-        // SEMESTER
-
-        if (
-                student.getSemester() != null
-        ) {
-
-            completedProfileFields++;
-        }
-
-
-        // BACKLOGS
-
-        if (
-                student.getBacklogs() != null
-        ) {
-
-            completedProfileFields++;
-        }
-
-
-        int profileCompletion = 0;
-
-
-        if (
-                totalProfileFields > 0
-        ) {
-
-            profileCompletion =
-                    (int) Math.round(
-                            (
-                                    (double)
-                                            completedProfileFields
-                                            /
-                                            totalProfileFields
-                            ) * 100
-                    );
-        }
+        int profileCompletion =
+                calculateProfileCompletion(student);
 
 
         response.setProfileCompletion(
@@ -238,34 +245,87 @@ public class DashboardService {
 
 
         // =================================================
+        // DEBUG
+        // =================================================
+
+        System.out.println(
+                "=========================================="
+        );
+
+        System.out.println(
+                "DASHBOARD PROFILE COMPLETION"
+        );
+
+        System.out.println(
+                "Student ID: " + studentId
+        );
+
+        System.out.println(
+                "Full Name: " + student.getFullName()
+        );
+
+        System.out.println(
+                "Email: " + student.getEmail()
+        );
+
+        System.out.println(
+                "Programming Knowledge: "
+                        + student.getProgrammingKnowledge()
+        );
+
+        System.out.println(
+                "Preferred Field: "
+                        + student.getPreferredField()
+        );
+
+        System.out.println(
+                "Education: "
+                        + student.getEducation()
+        );
+
+        System.out.println(
+                "Experience: "
+                        + student.getExperience()
+        );
+
+        System.out.println(
+                "Profile Completion: "
+                        + profileCompletion
+                        + "%"
+        );
+
+        System.out.println(
+                "=========================================="
+        );
+
+
+        // =================================================
         // 5. SKILLS COUNT
         // =================================================
 
-        // ==========================================
-// SKILLS COUNT
-// ==========================================
-
-int skillsCount = 0;
-
-try {
-
-    skillsCount =
-            skillRepository
-                    .findByStudentId(studentId)
-                    .size();
-
-} catch (Exception e) {
-
-    System.out.println(
-            "Error while counting skills: "
-                    + e.getMessage()
-    );
-}
+        int skillsCount = 0;
 
 
-response.setSkillsCount(
-        skillsCount
-);
+        try {
+
+            skillsCount =
+                    skillRepository
+                            .findByStudentId(studentId)
+                            .size();
+
+        } catch (Exception e) {
+
+            System.out.println(
+                    "Error while counting skills: "
+                            + e.getMessage()
+            );
+        }
+
+
+        response.setSkillsCount(
+                skillsCount
+        );
+
 
         // =================================================
         // 6. LATEST AI PREDICTION
@@ -278,12 +338,9 @@ response.setSkillsCount(
                         );
 
 
-        String career =
-                "Not Generated";
+        String career = "Not Generated";
 
-
-        Double confidence =
-                0.0;
+        Double confidence = 0.0;
 
 
         if (
@@ -296,18 +353,21 @@ response.setSkillsCount(
 
 
             if (
-                    prediction.getRecommendedCareer()
-                            != null
+                    prediction.getRecommendedCareer() != null &&
+                    !prediction
+                            .getRecommendedCareer()
+                            .trim()
+                            .isEmpty()
             ) {
 
                 career =
-                        prediction.getRecommendedCareer();
+                        prediction
+                                .getRecommendedCareer();
             }
 
 
             if (
-                    prediction.getConfidence()
-                            != null
+                    prediction.getConfidence() != null
             ) {
 
                 confidence =
@@ -319,7 +379,6 @@ response.setSkillsCount(
         response.setRecommendedCareer(
                 career
         );
-
 
         response.setConfidence(
                 confidence
@@ -336,9 +395,7 @@ response.setSkillsCount(
 
 
         if (
-                !career.equals(
-                        "Not Generated"
-                )
+                !career.equals("Not Generated")
         ) {
 
             List<CareerRoadmap> roadmap =
@@ -356,7 +413,7 @@ response.setSkillsCount(
 
 
             // =============================================
-            // GET STUDENT ROADMAP PROGRESS
+            // GET ROADMAP PROGRESS
             // =============================================
 
             List<RoadmapProgress> progressList =
@@ -386,8 +443,7 @@ response.setSkillsCount(
                             )
                     ) {
 
-                        boolean roadmapExists =
-                                false;
+                        boolean roadmapExists = false;
 
 
                         for (
@@ -402,17 +458,14 @@ response.setSkillsCount(
                                             )
                             ) {
 
-                                roadmapExists =
-                                        true;
+                                roadmapExists = true;
 
                                 break;
                             }
                         }
 
 
-                        if (
-                                roadmapExists
-                        ) {
+                        if (roadmapExists) {
 
                             completedSteps++;
                         }
@@ -426,13 +479,10 @@ response.setSkillsCount(
         // 8. ROADMAP PROGRESS %
         // =================================================
 
-        double roadmapProgress =
-                0.0;
+        double roadmapProgress = 0.0;
 
 
-        if (
-                totalSteps > 0
-        ) {
+        if (totalSteps > 0) {
 
             roadmapProgress =
                     Math.round(
@@ -452,11 +502,9 @@ response.setSkillsCount(
                 totalSteps
         );
 
-
         response.setCompletedRoadmapSteps(
                 completedSteps
         );
-
 
         response.setRoadmapProgress(
                 roadmapProgress
@@ -464,7 +512,7 @@ response.setSkillsCount(
 
 
         // =================================================
-        // 9. RETURN RESPONSE
+        // 9. RETURN
         // =================================================
 
         return response;

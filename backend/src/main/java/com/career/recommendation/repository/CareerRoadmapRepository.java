@@ -11,7 +11,6 @@ import java.util.List;
 public interface CareerRoadmapRepository
         extends JpaRepository<CareerRoadmap, Long> {
 
-
     // ==========================================
     // GET ROADMAP BY STUDENT
     // ==========================================
@@ -19,7 +18,6 @@ public interface CareerRoadmapRepository
     List<CareerRoadmap> findByStudentId(
             Long studentId
     );
-
 
     // ==========================================
     // GET ROADMAP BY CAREER
@@ -29,7 +27,6 @@ public interface CareerRoadmapRepository
     findByCareerOrderByStepNumberAsc(
             String career
     );
-
 
     // ==========================================
     // DELETE ROADMAP BY STUDENT

@@ -154,7 +154,9 @@ function Login() {
         <form onSubmit={handleSubmit}>
 
 
-          {/* EMAIL */}
+          {/* ==================================
+              EMAIL
+          ================================== */}
 
           <input
             type="email"
@@ -166,7 +168,9 @@ function Login() {
           />
 
 
-          {/* PASSWORD */}
+          {/* ==================================
+              PASSWORD
+          ================================== */}
 
           <div className="password-wrapper">
 
@@ -207,7 +211,30 @@ function Login() {
           </div>
 
 
-          {/* LOGIN BUTTON */}
+          {/* ==================================
+              FORGOT PASSWORD
+          ================================== */}
+
+          <div className="forgot-password-wrapper">
+
+            <button
+              type="button"
+              className="forgot-password-link"
+              onClick={() =>
+                navigate("/forgot-password")
+              }
+            >
+
+              Forgot Password?
+
+            </button>
+
+          </div>
+
+
+          {/* ==================================
+              LOGIN BUTTON
+          ================================== */}
 
           <button
             type="submit"
@@ -224,7 +251,9 @@ function Login() {
         </form>
 
 
-        {/* MESSAGE */}
+        {/* ==================================
+            MESSAGE
+        ================================== */}
 
         {message && (
 
@@ -237,12 +266,18 @@ function Login() {
         )}
 
 
+        {/* ==================================
+            REGISTER TEXT
+        ================================== */}
+
         <p>
           Don't have an account?
         </p>
 
 
-        {/* REGISTER */}
+        {/* ==================================
+            REGISTER BUTTON
+        ================================== */}
 
         <button
           className="login-button"

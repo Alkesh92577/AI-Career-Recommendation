@@ -18,6 +18,11 @@ public class AuthController {
         this.authService = authService;
     }
 
+
+    // =========================================================
+    // REGISTER
+    // =========================================================
+
     @PostMapping("/register")
     public ResponseEntity<Map<String, Object>> register(
             @RequestBody RegisterRequest request) {
@@ -27,12 +32,53 @@ public class AuthController {
         );
     }
 
+
+    // =========================================================
+    // LOGIN
+    // =========================================================
+
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
             @RequestBody LoginRequest request) {
 
         return ResponseEntity.ok(
                 authService.login(request)
+        );
+    }
+
+
+    // =========================================================
+    // FORGOT PASSWORD
+    // =========================================================
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<Map<String, Object>> forgotPassword(
+            @RequestBody Map<String, String> request) {
+
+        String email = request.get("email");
+
+        return ResponseEntity.ok(
+                authService.forgotPassword(email)
+        );
+    }
+
+
+    // =========================================================
+    // RESET PASSWORD
+    // =========================================================
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<Map<String, Object>> resetPassword(
+            @RequestBody Map<String, String> request) {
+
+        String token = request.get("token");
+        String newPassword = request.get("newPassword");
+
+        return ResponseEntity.ok(
+                authService.resetPassword(
+                        token,
+                        newPassword
+                )
         );
     }
 }

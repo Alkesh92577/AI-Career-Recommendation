@@ -30,7 +30,9 @@ public class StudentController {
 
         if (student.isPresent()) {
 
-            return ResponseEntity.ok(student.get());
+            return ResponseEntity.ok(
+                    student.get()
+            );
 
         }
 
@@ -51,7 +53,9 @@ public class StudentController {
 
         if (student.isPresent()) {
 
-            return ResponseEntity.ok(student.get());
+            return ResponseEntity.ok(
+                    student.get()
+            );
 
         }
 
@@ -70,7 +74,9 @@ public class StudentController {
         Student saved =
                 studentService.save(student);
 
-        return ResponseEntity.ok(saved);
+        return ResponseEntity.ok(
+                saved
+        );
     }
 
 
@@ -88,7 +94,9 @@ public class StudentController {
 
         if (existing.isEmpty()) {
 
-            return ResponseEntity.notFound().build();
+            return ResponseEntity
+                    .notFound()
+                    .build();
         }
 
         student.setId(id);
@@ -96,13 +104,15 @@ public class StudentController {
         Student updated =
                 studentService.save(student);
 
-        return ResponseEntity.ok(updated);
+        return ResponseEntity.ok(
+                updated
+        );
     }
 
 
-    // =====================================================
-    // UPDATE ACADEMIC DETAILS - NEW API
-    // =====================================================
+    // ==========================================
+    // UPDATE ACADEMIC DETAILS
+    // ==========================================
 
     @PutMapping("/{id}/academic")
     public ResponseEntity<Student> updateAcademicDetails(
@@ -111,32 +121,40 @@ public class StudentController {
 
             @RequestBody AcademicRequest request) {
 
-
         Optional<Student> updated =
                 studentService.updateAcademicDetails(
+
                         id,
+
                         request.getTenthMarks(),
+
                         request.getTwelfthMarks(),
+
                         request.getGraduationMarks(),
+
                         request.getSemester(),
+
                         request.getBacklogs()
                 );
 
 
         if (updated.isPresent()) {
 
-            return ResponseEntity.ok(updated.get());
+            return ResponseEntity.ok(
+                    updated.get()
+            );
 
         }
 
-
-        return ResponseEntity.notFound().build();
+        return ResponseEntity
+                .notFound()
+                .build();
     }
 
 
-    // =====================================================
-    // ACADEMIC REQUEST DTO - NEW
-    // =====================================================
+    // ==========================================
+    // ACADEMIC REQUEST DTO
+    // ==========================================
 
     public static class AcademicRequest {
 
@@ -151,39 +169,43 @@ public class StudentController {
         private Integer backlogs;
 
 
-        // -------------------------------
-        // Tenth Marks
-        // -------------------------------
+        // ======================================
+        // TENTH MARKS
+        // ======================================
 
         public Double getTenthMarks() {
 
             return tenthMarks;
         }
 
-        public void setTenthMarks(Double tenthMarks) {
+        public void setTenthMarks(
+                Double tenthMarks) {
 
-            this.tenthMarks = tenthMarks;
+            this.tenthMarks =
+                    tenthMarks;
         }
 
 
-        // -------------------------------
-        // Twelfth Marks
-        // -------------------------------
+        // ======================================
+        // TWELFTH MARKS
+        // ======================================
 
         public Double getTwelfthMarks() {
 
             return twelfthMarks;
         }
 
-        public void setTwelfthMarks(Double twelfthMarks) {
+        public void setTwelfthMarks(
+                Double twelfthMarks) {
 
-            this.twelfthMarks = twelfthMarks;
+            this.twelfthMarks =
+                    twelfthMarks;
         }
 
 
-        // -------------------------------
-        // Graduation Marks
-        // -------------------------------
+        // ======================================
+        // GRADUATION MARKS
+        // ======================================
 
         public Double getGraduationMarks() {
 
@@ -193,37 +215,44 @@ public class StudentController {
         public void setGraduationMarks(
                 Double graduationMarks) {
 
-            this.graduationMarks = graduationMarks;
+            this.graduationMarks =
+                    graduationMarks;
         }
 
 
-        // -------------------------------
-        // Semester
-        // -------------------------------
+        // ======================================
+        // SEMESTER
+        // ======================================
 
         public Integer getSemester() {
 
             return semester;
         }
 
-        public void setSemester(Integer semester) {
+        public void setSemester(
+                Integer semester) {
 
-            this.semester = semester;
+            this.semester =
+                    semester;
         }
 
 
-        // -------------------------------
-        // Backlogs
-        // -------------------------------
+        // ======================================
+        // BACKLOGS
+        // ======================================
 
         public Integer getBacklogs() {
 
             return backlogs;
         }
 
-        public void setBacklogs(Integer backlogs) {
+        public void setBacklogs(
+                Integer backlogs) {
 
-            this.backlogs = backlogs;
+            this.backlogs =
+                    backlogs;
         }
+
     }
+
 }

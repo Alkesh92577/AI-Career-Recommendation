@@ -6,10 +6,8 @@ import studentService from "../services/studentService";
 import skillService from "../services/skillService";
 import interestAssessmentService from "../services/interestAssessmentService";
 
-import { getBestCareer } from "../utils/careerRecommendation";
-
 const API_BASE =
-"https://ai-career-backend-vj8d.onrender.com/api";
+  "https://ai-career-backend-vj8d.onrender.com/api";
 
 const PREDICTION_API = `${API_BASE}/predictions`;
 const DASHBOARD_API = `${API_BASE}/dashboard`;
@@ -18,14 +16,10 @@ function Dashboard() {
   const navigate = useNavigate();
 
   const [userName, setUserName] = useState("Student");
+
   const [interestResult, setInterestResult] = useState(null);
+
   const [predictionResult, setPredictionResult] = useState(null);
-
-  // ==========================================================
-  // SKILL BASED CAREER RECOMMENDATION
-  // ==========================================================
-
-  const [skillCareerResult, setSkillCareerResult] = useState(null);
 
   const [dashboardData, setDashboardData] = useState({
     studentId: null,
@@ -49,7 +43,11 @@ function Dashboard() {
   // ==========================================================
 
   const toNumber = (value) => {
-    if (value === null || value === undefined || value === "") {
+    if (
+      value === null ||
+      value === undefined ||
+      value === ""
+    ) {
       return 0;
     }
 
@@ -71,11 +69,19 @@ function Dashboard() {
     if (!student) return 0;
 
     const fields = [
-      student.fullName ?? student.name ?? student.studentName,
-      student.email ?? student.emailAddress,
+      student.fullName ??
+        student.name ??
+        student.studentName,
+
+      student.email ??
+        student.emailAddress,
+
       student.programmingKnowledge,
+
       student.preferredField,
+
       student.education,
+
       student.experience,
     ];
 
@@ -99,235 +105,356 @@ function Dashboard() {
   };
 
   // ==========================================================
-  // LOAD LATEST AI PREDICTION
+  // CHECK IF CURRENT STUDENT HAS COMPLETED SKILL ASSESSMENT
   // ==========================================================
 
-  const loadLatestPrediction = async (studentId) => {
-  try {
-    // =====================================================
-    // FIRST: CHECK CURRENT SKILL ASSESSMENT CATEGORY SCORES
-    // =====================================================
-
-    let categoryScores = null;
-
+  const hasSkillAssessmentResult = () => {
     try {
-      const savedCategoryScores = localStorage.getItem(
-        "latestSkillAssessmentCategoryScores"
-      );
+      const savedResult =
+        localStorage.getItem(
+          "latestSkillAssessmentResult"
+        );
+
+      const savedCategoryScores =
+        localStorage.getItem(
+          "latestSkillAssessmentCategoryScores"
+        );
+
+      // ======================================================
+      // CHECK SAVED ASSESSMENT RESULT
+      // ======================================================
+
+      if (savedResult) {
+        const parsed = JSON.parse(savedResult);
+
+        if (
+          parsed &&
+          (
+            parsed.completed === true ||
+            parsed.completed === "true" ||
+            parsed.categoryScores ||
+            parsed.career
+          )
+        ) {
+          return true;
+        }
+      }
+
+      // ======================================================
+      // CHECK CATEGORY SCORES
+      // ======================================================
 
       if (savedCategoryScores) {
-        categoryScores = JSON.parse(savedCategoryScores);
+        const parsed =
+          JSON.parse(savedCategoryScores);
+
+        if (
+          parsed &&
+          typeof parsed === "object"
+        ) {
+          const technology = toNumber(
+            parsed.technology_score
+          );
+
+          const data = toNumber(
+            parsed.data_score
+          );
+
+          const web = toNumber(
+            parsed.web_score
+          );
+
+          const cyberSecurity = toNumber(
+            parsed.cyber_security_score
+          );
+
+          return (
+            technology > 0 ||
+            data > 0 ||
+            web > 0 ||
+            cyberSecurity > 0
+          );
+        }
       }
     } catch (error) {
       console.error(
-        "CATEGORY SCORE READ ERROR:",
+        "SKILL ASSESSMENT STATUS ERROR:",
         error
       );
     }
 
-    // =====================================================
-    // GET STRONGEST CATEGORY
-    // =====================================================
+    return false;
+  };
 
-    if (categoryScores) {
-      const technology = toNumber(
-        categoryScores.technology_score
-      );
+  // ==========================================================
+  // AI PREDICTION BUTTON
+  // ==========================================================
 
-      const data = toNumber(
-        categoryScores.data_score
-      );
+  const handleAIPredictionClick = () => {
+    const assessmentCompleted =
+      hasSkillAssessmentResult();
 
-      const web = toNumber(
-        categoryScores.web_score
-      );
-
-      const cyberSecurity = toNumber(
-        categoryScores.cyber_security_score
-      );
-
-      const scores = [
-        {
-          category: "technology",
-          score: technology,
-          career: "Software Developer",
-        },
-        {
-          category: "data",
-          score: data,
-          career: "Data Analyst",
-        },
-        {
-          category: "web",
-          score: web,
-          career: "Web Developer",
-        },
-        {
-          category: "cyber_security",
-          score: cyberSecurity,
-          career: "Cyber Security Specialist",
-        },
-      ];
-
-      const strongestCategory = scores.reduce(
-        (best, current) =>
-          current.score > best.score
-            ? current
-            : best,
-        scores[0]
-      );
-
-      // ===================================================
-      // CURRENT ASSESSMENT HAS A VALID SCORE
-      // ===================================================
-
-      if (strongestCategory.score > 0) {
-        const currentPrediction = {
-          recommendedCareer:
-            strongestCategory.career,
-
-          confidence:
-            strongestCategory.score,
-
-          strongestCategory:
-            strongestCategory.category,
-
-          strongestCategoryScore:
-            strongestCategory.score,
-
-          predictionSource:
-            "skill_assessment_category",
-        };
-
-        setPredictionResult(
-          currentPrediction
-        );
-
-        // Update localStorage so old prediction
-        // cannot remain visible on dashboard.
-        localStorage.setItem(
-          "latestPrediction",
-          JSON.stringify(currentPrediction)
-        );
-
-        return;
-      }
+    if (!assessmentCompleted) {
+      return;
     }
 
-    // =====================================================
-    // SECOND: CHECK SAVED LATEST PREDICTION
-    // =====================================================
+    goToPage("/ai-prediction");
+  };
 
-    const savedPrediction =
-      localStorage.getItem("latestPrediction");
+  // ==========================================================
+  // LOAD AI PREDICTION
+  // ==========================================================
 
-    if (savedPrediction) {
+  const loadLatestPrediction = async (studentId) => {
+    try {
+      /*
+       * IMPORTANT:
+       * AI prediction must NOT appear before
+       * Skill Assessment has been completed.
+       */
+
+      const assessmentCompleted =
+        hasSkillAssessmentResult();
+
+      if (!assessmentCompleted) {
+        setPredictionResult(null);
+        return;
+      }
+
+      // =====================================================
+      // CURRENT SKILL ASSESSMENT CATEGORY RESULT
+      // =====================================================
+
+      let categoryScores = null;
+
       try {
-        const parsed =
-          JSON.parse(savedPrediction);
+        const savedCategoryScores =
+          localStorage.getItem(
+            "latestSkillAssessmentCategoryScores"
+          );
 
-        const career =
-          parsed.recommendedCareer ||
-          parsed.career ||
-          parsed.predictedCareer ||
-          parsed.careerName ||
-          "";
-
-        if (String(career).trim()) {
-          setPredictionResult({
-            recommendedCareer:
-              String(career).trim(),
-
-            confidence:
-              normalizeConfidence(
-                parsed.confidence
-              ),
-          });
-
-          return;
+        if (savedCategoryScores) {
+          categoryScores =
+            JSON.parse(
+              savedCategoryScores
+            );
         }
       } catch (error) {
         console.error(
-          "LOCAL PREDICTION ERROR:",
+          "CATEGORY SCORE READ ERROR:",
           error
         );
       }
-    }
 
-    // =====================================================
-    // THIRD: GET PREDICTION FROM BACKEND
-    // =====================================================
+      // =====================================================
+      // GET STRONGEST CATEGORY
+      // =====================================================
 
-    const response = await axios.get(
-      `${PREDICTION_API}/student/${studentId}`
-    );
+      if (categoryScores) {
+        const technology = toNumber(
+          categoryScores.technology_score
+        );
 
-    let predictions = response.data;
+        const data = toNumber(
+          categoryScores.data_score
+        );
 
-    if (!Array.isArray(predictions)) {
-      predictions = predictions
-        ? [predictions]
-        : [];
-    }
+        const web = toNumber(
+          categoryScores.web_score
+        );
 
-    if (predictions.length === 0) {
-      setPredictionResult(null);
-      return;
-    }
+        const cyberSecurity = toNumber(
+          categoryScores.cyber_security_score
+        );
 
-    const latest = [...predictions].sort(
-      (a, b) =>
-        toNumber(b.id) -
-        toNumber(a.id)
-    )[0];
+        const scores = [
+          {
+            category: "technology",
+            score: technology,
+            career: "Software Developer",
+          },
 
-    const career =
-      latest.recommendedCareer ||
-      latest.career ||
-      latest.predictedCareer ||
-      latest.careerName ||
-      "";
+          {
+            category: "data",
+            score: data,
+            career: "Data Analyst",
+          },
 
-    if (!String(career).trim()) {
-      setPredictionResult(null);
-      return;
-    }
+          {
+            category: "web",
+            score: web,
+            career: "Web Developer",
+          },
 
-    const finalPrediction = {
-      recommendedCareer:
-        String(career).trim(),
+          {
+            category: "cyber_security",
+            score: cyberSecurity,
+            career: "Cyber Security Specialist",
+          },
+        ];
 
-      confidence:
-        normalizeConfidence(
-          latest.confidence
-        ),
-    };
+        const strongestCategory =
+          scores.reduce(
+            (best, current) =>
+              current.score > best.score
+                ? current
+                : best,
+            scores[0]
+          );
 
-    setPredictionResult(
-      finalPrediction
-    );
+        if (
+          strongestCategory.score > 0
+        ) {
+          const currentPrediction = {
+            recommendedCareer:
+              strongestCategory.career,
 
-    localStorage.setItem(
-      "latestPrediction",
-      JSON.stringify(
+            confidence:
+              strongestCategory.score,
+
+            strongestCategory:
+              strongestCategory.category,
+
+            strongestCategoryScore:
+              strongestCategory.score,
+
+            predictionSource:
+              "skill_assessment_category",
+          };
+
+          setPredictionResult(
+            currentPrediction
+          );
+
+          return;
+        }
+      }
+
+      // =====================================================
+      // LOCAL AI PREDICTION
+      // =====================================================
+
+      const savedPrediction =
+        localStorage.getItem(
+          "latestPrediction"
+        );
+
+      if (savedPrediction) {
+        try {
+          const parsed =
+            JSON.parse(
+              savedPrediction
+            );
+
+          const career =
+            parsed.recommendedCareer ||
+            parsed.career ||
+            parsed.predictedCareer ||
+            parsed.careerName ||
+            "";
+
+          if (
+            String(career).trim()
+          ) {
+            setPredictionResult({
+              recommendedCareer:
+                String(career).trim(),
+
+              confidence:
+                normalizeConfidence(
+                  parsed.confidence
+                ),
+            });
+
+            return;
+          }
+        } catch (error) {
+          console.error(
+            "LOCAL PREDICTION ERROR:",
+            error
+          );
+        }
+      }
+
+      // =====================================================
+      // BACKEND PREDICTION
+      // =====================================================
+
+      const response =
+        await axios.get(
+          `${PREDICTION_API}/student/${studentId}`
+        );
+
+      let predictions =
+        response.data;
+
+      if (
+        !Array.isArray(predictions)
+      ) {
+        predictions =
+          predictions
+            ? [predictions]
+            : [];
+      }
+
+      if (
+        predictions.length === 0
+      ) {
+        setPredictionResult(null);
+        return;
+      }
+
+      const latest =
+        [...predictions].sort(
+          (a, b) =>
+            toNumber(b.id) -
+            toNumber(a.id)
+        )[0];
+
+      const career =
+        latest.recommendedCareer ||
+        latest.career ||
+        latest.predictedCareer ||
+        latest.careerName ||
+        "";
+
+      if (
+        !String(career).trim()
+      ) {
+        setPredictionResult(null);
+        return;
+      }
+
+      const finalPrediction = {
+        recommendedCareer:
+          String(career).trim(),
+
+        confidence:
+          normalizeConfidence(
+            latest.confidence
+          ),
+      };
+
+      setPredictionResult(
         finalPrediction
-      )
-    );
-  } catch (error) {
-    console.error(
-      "AI PREDICTION ERROR:",
-      error
-    );
+      );
+    } catch (error) {
+      console.error(
+        "AI PREDICTION ERROR:",
+        error
+      );
 
-    setPredictionResult(null);
-  }
-};
+      setPredictionResult(null);
+    }
+  };
 
   // ==========================================================
   // LOAD INTEREST TEST
   // ==========================================================
 
-  const loadInterestResult = async (studentId) => {
+  const loadInterestResult = async (
+    studentId
+  ) => {
     try {
       const assessmentData =
         await interestAssessmentService.getByStudentId(
@@ -335,7 +462,9 @@ function Dashboard() {
         );
 
       if (
-        !Array.isArray(assessmentData) ||
+        !Array.isArray(
+          assessmentData
+        ) ||
         assessmentData.length === 0
       ) {
         setInterestResult(null);
@@ -344,89 +473,138 @@ function Dashboard() {
 
       const groupedAttempts = {};
 
-      assessmentData.forEach((item) => {
-        const attemptId =
-          item.attemptId || "OLD-ATTEMPT";
+      assessmentData.forEach(
+        (item) => {
+          const attemptId =
+            item.attemptId ||
+            "OLD-ATTEMPT";
 
-        if (!groupedAttempts[attemptId]) {
-          groupedAttempts[attemptId] = [];
+          if (
+            !groupedAttempts[
+              attemptId
+            ]
+          ) {
+            groupedAttempts[
+              attemptId
+            ] = [];
+          }
+
+          groupedAttempts[
+            attemptId
+          ].push(item);
         }
+      );
 
-        groupedAttempts[attemptId].push(item);
-      });
+      const latestAttempt =
+        Object.entries(
+          groupedAttempts
+        ).sort(
+          ([, a], [, b]) => {
+            const maxA =
+              Math.max(
+                ...a.map(
+                  (item) =>
+                    toNumber(
+                      item.id
+                    )
+                )
+              );
 
-      const latestAttempt = Object.entries(
-        groupedAttempts
-      ).sort(([, a], [, b]) => {
-        const maxA = Math.max(
-          ...a.map((item) => toNumber(item.id))
-        );
+            const maxB =
+              Math.max(
+                ...b.map(
+                  (item) =>
+                    toNumber(
+                      item.id
+                    )
+                )
+              );
 
-        const maxB = Math.max(
-          ...b.map((item) => toNumber(item.id))
-        );
-
-        return maxB - maxA;
-      })[0];
+            return maxB - maxA;
+          }
+        )[0];
 
       if (!latestAttempt) {
         setInterestResult(null);
         return;
       }
 
-      const [, attemptData] = latestAttempt;
+      const [, attemptData] =
+        latestAttempt;
 
       const categoryCounts = {};
 
-      attemptData.forEach((item) => {
-        const category = item.careerCategory;
+      attemptData.forEach(
+        (item) => {
+          const category =
+            item.careerCategory;
 
-        if (!category) return;
+          if (!category) return;
 
-        categoryCounts[category] =
-          (categoryCounts[category] || 0) + 1;
-      });
+          categoryCounts[
+            category
+          ] =
+            (
+              categoryCounts[
+                category
+              ] || 0
+            ) + 1;
+        }
+      );
 
-      const strongestCategory = Object.entries(
-        categoryCounts
-      ).sort(([, a], [, b]) => b - a)[0]?.[0];
+      const strongestCategory =
+        Object.entries(
+          categoryCounts
+        ).sort(
+          ([, a], [, b]) =>
+            b - a
+        )[0]?.[0];
 
       const careerMap = {
         Technology: {
-          career: "Software Developer",
+          career:
+            "Software Developer",
           icon: "💻",
         },
 
         Data: {
-          career: "Data Analyst",
+          career:
+            "Data Analyst",
           icon: "📊",
         },
 
         Web: {
-          career: "Web Developer",
+          career:
+            "Web Developer",
           icon: "🌐",
         },
 
         "Cyber Security": {
-          career: "Cyber Security Specialist",
+          career:
+            "Cyber Security Specialist",
           icon: "🔐",
         },
       };
 
       const careerInfo =
-        careerMap[strongestCategory] || {
-          career:
-            strongestCategory || "Not Available",
-          icon: "🧠",
-        };
+        careerMap[
+          strongestCategory
+        ];
+
+      if (!careerInfo) {
+        setInterestResult(null);
+        return;
+      }
 
       setInterestResult({
         category:
-          strongestCategory || "Not Available",
+          strongestCategory,
 
-        career: careerInfo.career,
+        career:
+          careerInfo.career,
 
-        icon: careerInfo.icon,
+        icon:
+          careerInfo.icon,
       });
     } catch (error) {
       console.error(
@@ -439,207 +617,191 @@ function Dashboard() {
   };
 
   // ==========================================================
-  // LOAD SKILL CAREER RECOMMENDATION
-  // ==========================================================
-
-  const loadSkillCareerRecommendation = (
-    skills
-  ) => {
-    try {
-      if (!Array.isArray(skills) || skills.length === 0) {
-        setSkillCareerResult(null);
-        return;
-      }
-
-      const bestCareer = getBestCareer(skills);
-
-      if (!bestCareer) {
-        setSkillCareerResult(null);
-        return;
-      }
-
-      setSkillCareerResult(bestCareer);
-
-      // Save latest skill recommendation
-      localStorage.setItem(
-        "latestSkillCareerRecommendation",
-        JSON.stringify(bestCareer)
-      );
-    } catch (error) {
-      console.error(
-        "SKILL CAREER RECOMMENDATION ERROR:",
-        error
-      );
-
-      setSkillCareerResult(null);
-    }
-  };
-
-  // ==========================================================
   // LOAD DASHBOARD
   // ==========================================================
 
   useEffect(() => {
-    const loadDashboard = async () => {
-      const userId =
-        localStorage.getItem("userId");
+    const loadDashboard =
+      async () => {
+        const userId =
+          localStorage.getItem(
+            "userId"
+          );
 
-      const storedUserName =
-        localStorage.getItem("userName") ||
-        "Student";
+        const storedUserName =
+          localStorage.getItem(
+            "userName"
+          ) || "Student";
 
-      setUserName(storedUserName);
+        setUserName(
+          storedUserName
+        );
 
-      if (!userId) {
-        setLoading(false);
-        return;
-      }
-
-      try {
-        // ------------------------------------------------------
-        // STUDENT
-        // ------------------------------------------------------
-
-        const student =
-          await studentService.getByUserId(userId);
-
-        if (!student?.id) {
+        if (!userId) {
           setLoading(false);
           return;
         }
 
-        const studentId = student.id;
+        try {
+          // =====================================================
+          // STUDENT
+          // =====================================================
 
-        // ------------------------------------------------------
-        // LOAD SKILLS
-        // ------------------------------------------------------
-
-        const skillsPromise =
-          skillService.getByStudentId(studentId);
-
-        // ------------------------------------------------------
-        // DASHBOARD API
-        // ------------------------------------------------------
-
-        const dashboardPromise = axios
-          .get(`${DASHBOARD_API}/${studentId}`)
-          .then((response) => response.data)
-          .catch((error) => {
-            console.error(
-              "DASHBOARD API ERROR:",
-              error
+          const student =
+            await studentService.getByUserId(
+              userId
             );
 
-            return null;
-          });
+          if (!student?.id) {
+            setLoading(false);
+            return;
+          }
 
-        // ------------------------------------------------------
-        // PARALLEL LOAD
-        // ------------------------------------------------------
+          const studentId =
+            student.id;
 
-        const [
-          skillsResponse,
-          dashboardResponse,
-        ] = await Promise.all([
-          skillsPromise.catch((error) => {
-            console.error(
-              "SKILLS LOAD ERROR:",
-              error
+          // =====================================================
+          // SKILLS
+          // =====================================================
+
+          const skillsPromise =
+            skillService.getByStudentId(
+              studentId
             );
 
-            return [];
-          }),
+          // =====================================================
+          // DASHBOARD API
+          // =====================================================
 
-          dashboardPromise,
-        ]);
+          const dashboardPromise =
+            axios
+              .get(
+                `${DASHBOARD_API}/${studentId}`
+              )
+              .then(
+                (response) =>
+                  response.data
+              )
+              .catch(
+                (error) => {
+                  console.error(
+                    "DASHBOARD API ERROR:",
+                    error
+                  );
 
-        // ------------------------------------------------------
-        // SKILLS
-        // ------------------------------------------------------
+                  return null;
+                }
+              );
 
-        const skills = Array.isArray(
-          skillsResponse
-        )
-          ? skillsResponse
-          : [];
+          // =====================================================
+          // PARALLEL LOAD
+          // =====================================================
 
-        const directSkillsCount =
-          skills.length;
+          const [
+            skillsResponse,
+            dashboardResponse,
+          ] = await Promise.all([
+            skillsPromise.catch(
+              (error) => {
+                console.error(
+                  "SKILLS LOAD ERROR:",
+                  error
+                );
 
-        // ------------------------------------------------------
-        // CALCULATE SKILL CAREER
-        // ------------------------------------------------------
+                return [];
+              }
+            ),
 
-        loadSkillCareerRecommendation(
-          skills
-        );
+            dashboardPromise,
+          ]);
 
-        // ------------------------------------------------------
-        // PROFILE COMPLETION
-        // ------------------------------------------------------
+          // =====================================================
+          // SKILLS
+          // =====================================================
 
-        const apiSkillsCount = toNumber(
-          dashboardResponse?.skillsCount
-        );
+          const skills =
+            Array.isArray(
+              skillsResponse
+            )
+              ? skillsResponse
+              : [];
 
-        const finalProfileCompletion =
-          calculateProfileCompletion(
-            student
+          const directSkillsCount =
+            skills.length;
+
+          // =====================================================
+          // PROFILE COMPLETION
+          // =====================================================
+
+          const apiSkillsCount =
+            toNumber(
+              dashboardResponse?.skillsCount
+            );
+
+          const finalProfileCompletion =
+            calculateProfileCompletion(
+              student
+            );
+
+          const finalSkillsCount =
+            directSkillsCount > 0
+              ? directSkillsCount
+              : apiSkillsCount;
+
+          // =====================================================
+          // STUDENT NAME
+          // =====================================================
+
+          const finalStudentName =
+            dashboardResponse?.studentName ||
+            student.fullName ||
+            student.studentName ||
+            storedUserName ||
+            "Student";
+
+          setUserName(
+            finalStudentName
           );
 
-        const finalSkillsCount =
-          directSkillsCount > 0
-            ? directSkillsCount
-            : apiSkillsCount;
+          // =====================================================
+          // DASHBOARD STATE
+          // =====================================================
 
-        // ------------------------------------------------------
-        // STUDENT NAME
-        // ------------------------------------------------------
+          setDashboardData({
+            studentId,
 
-        const finalStudentName =
-          dashboardResponse?.studentName ||
-          student.fullName ||
-          student.studentName ||
-          storedUserName ||
-          "Student";
+            studentName:
+              finalStudentName,
 
-        setUserName(finalStudentName);
+            profileCompletion:
+              finalProfileCompletion,
 
-        // ------------------------------------------------------
-        // DASHBOARD STATE
-        // ------------------------------------------------------
+            skillsCount:
+              finalSkillsCount,
+          });
 
-        setDashboardData({
-          studentId,
+          // =====================================================
+          // LOAD ASSESSMENT / PREDICTION
+          // =====================================================
 
-          studentName:
-            finalStudentName,
+          await Promise.all([
+            loadLatestPrediction(
+              studentId
+            ),
 
-          profileCompletion:
-            finalProfileCompletion,
-
-          skillsCount:
-            finalSkillsCount,
-        });
-
-        // ------------------------------------------------------
-        // OTHER DATA
-        // ------------------------------------------------------
-
-        await Promise.all([
-          loadLatestPrediction(studentId),
-
-          loadInterestResult(studentId),
-        ]);
-      } catch (error) {
-        console.error(
-          "DASHBOARD ERROR:",
-          error
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
+            loadInterestResult(
+              studentId
+            ),
+          ]);
+        } catch (error) {
+          console.error(
+            "DASHBOARD ERROR:",
+            error
+          );
+        } finally {
+          setLoading(false);
+        }
+      };
 
     loadDashboard();
   }, []);
@@ -663,16 +825,18 @@ function Dashboard() {
   // ==========================================================
 
   const aiCareer =
-    predictionResult?.recommendedCareer || "";
+    predictionResult?.recommendedCareer ||
+    "";
 
   const aiConfidence =
     predictionResult?.confidence ?? 0;
 
-  const skillCareer =
-    skillCareerResult?.career || "";
+  // ==========================================================
+  // SKILL ASSESSMENT STATUS
+  // ==========================================================
 
-  const skillMatch =
-    skillCareerResult?.score ?? 0;
+  const skillAssessmentCompleted =
+    hasSkillAssessmentResult();
 
   // ==========================================================
   // RENDER
@@ -697,7 +861,9 @@ function Dashboard() {
           </div>
 
           <div className="navbar-user">
-            <div className="avatar">👤</div>
+            <div className="avatar">
+              👤
+            </div>
 
             <div>
               <h3>{userName}</h3>
@@ -713,6 +879,7 @@ function Dashboard() {
           ==================================================== */}
 
           <div className="welcome-card">
+
             <div className="welcome-content">
 
               <span className="welcome-badge">
@@ -734,20 +901,24 @@ function Dashboard() {
               <button
                 className="primary-dashboard-button"
                 onClick={() =>
-                  goToPage("/ai-prediction")
+                  goToPage(
+                    "/interest-assessment"
+                  )
                 }
               >
-                {predictionResult
-                  ? "View AI Prediction"
-                  : "Generate AI Prediction"}
+                Start Interest Test
 
                 <span>→</span>
               </button>
+
             </div>
 
             <div className="welcome-visual">
+
               <div className="ai-circle">
-                <div className="ai-inner">✦</div>
+                <div className="ai-inner">
+                  ✦
+                </div>
               </div>
 
               <div className="floating-card card-one">
@@ -761,6 +932,7 @@ function Dashboard() {
               <div className="floating-card card-three">
                 🎨 Design
               </div>
+
             </div>
           </div>
 
@@ -773,6 +945,7 @@ function Dashboard() {
             {/* PROFILE */}
 
             <div className="dashboard-stat-card">
+
               <div className="stat-card-top">
 
                 <div className="stat-card-icon purple">
@@ -782,9 +955,12 @@ function Dashboard() {
                 <span className="stat-status">
                   PROFILE
                 </span>
+
               </div>
 
-              <h3>Profile Completion</h3>
+              <h3>
+                Profile Completion
+              </h3>
 
               <div className="progress-wrapper">
 
@@ -802,17 +978,20 @@ function Dashboard() {
                 <strong>
                   {dashboardData.profileCompletion}%
                 </strong>
+
               </div>
 
               <p>
                 Complete your profile to improve
                 recommendations.
               </p>
+
             </div>
 
             {/* SKILLS */}
 
             <div className="dashboard-stat-card">
+
               <div className="stat-card-top">
 
                 <div className="stat-card-icon blue">
@@ -822,9 +1001,12 @@ function Dashboard() {
                 <span className="stat-status">
                   SKILLS
                 </span>
+
               </div>
 
-              <h3>Skills Added</h3>
+              <h3>
+                Skills Added
+              </h3>
 
               <div className="big-stat">
                 {dashboardData.skillsCount}
@@ -833,11 +1015,13 @@ function Dashboard() {
               <p>
                 Add your technical and soft skills.
               </p>
+
             </div>
 
             {/* INTEREST */}
 
             <div className="dashboard-stat-card">
+
               <div className="stat-card-top">
 
                 <div className="stat-card-icon orange">
@@ -847,9 +1031,12 @@ function Dashboard() {
                 <span className="stat-status">
                   ASSESSMENT
                 </span>
+
               </div>
 
-              <h3>Interest Test</h3>
+              <h3>
+                Interest Test
+              </h3>
 
               {interestResult ? (
                 <>
@@ -881,11 +1068,13 @@ function Dashboard() {
                   </p>
                 </>
               )}
+
             </div>
 
             {/* AI */}
 
             <div className="dashboard-stat-card">
+
               <div className="stat-card-top">
 
                 <div className="stat-card-icon green">
@@ -895,9 +1084,12 @@ function Dashboard() {
                 <span className="stat-status">
                   AI
                 </span>
+
               </div>
 
-              <h3>Career Prediction</h3>
+              <h3>
+                Career Prediction
+              </h3>
 
               {predictionResult ? (
                 <>
@@ -915,15 +1107,16 @@ function Dashboard() {
               ) : (
                 <>
                   <div className="big-stat">
-                    —
+                    Not Available
                   </div>
 
                   <p>
-                    Generate AI prediction to see
-                    your career.
+                    Complete the Skill Assessment to
+                    get your career prediction.
                   </p>
                 </>
               )}
+
             </div>
           </div>
 
@@ -936,6 +1129,7 @@ function Dashboard() {
             <div className="dashboard-panel">
 
               <div className="panel-heading">
+
                 <div>
 
                   <h2>
@@ -946,11 +1140,13 @@ function Dashboard() {
                     A complete profile gives better
                     AI recommendations.
                   </p>
+
                 </div>
 
                 <span className="panel-icon">
                   ✦
                 </span>
+
               </div>
 
               <div className="profile-tasks">
@@ -971,6 +1167,7 @@ function Dashboard() {
                       Add your basic profile
                       information.
                     </p>
+
                   </div>
 
                   <button
@@ -980,6 +1177,7 @@ function Dashboard() {
                   >
                     Complete →
                   </button>
+
                 </div>
 
                 <div className="profile-task">
@@ -998,6 +1196,7 @@ function Dashboard() {
                       Add marks, education and
                       academic information.
                     </p>
+
                   </div>
 
                   <button
@@ -1009,6 +1208,7 @@ function Dashboard() {
                   >
                     Add →
                   </button>
+
                 </div>
 
                 <div className="profile-task">
@@ -1027,6 +1227,7 @@ function Dashboard() {
                       Add programming and technical
                       skills.
                     </p>
+
                   </div>
 
                   <button
@@ -1036,6 +1237,7 @@ function Dashboard() {
                   >
                     Add →
                   </button>
+
                 </div>
 
               </div>
@@ -1087,14 +1289,23 @@ function Dashboard() {
                       </small>
 
                     </div>
+
                   </div>
+
+                  <button
+                    type="button"
+                    className="secondary-dashboard-button"
+                    onClick={handleAIPredictionClick}
+                  >
+                    AI Prediction →
+                  </button>
                 </>
               ) : (
                 <>
                   <p>
                     Your personalized AI career
                     prediction will appear here after
-                    generating your AI prediction.
+                    completing the Skill Assessment.
                   </p>
 
                   <div className="locked-prediction">
@@ -1106,29 +1317,48 @@ function Dashboard() {
                     <div>
 
                       <strong>
-                        Prediction Not Generated
+                        Prediction Not Available
                       </strong>
 
                       <small>
-                        Generate your AI prediction
-                        first.
+                        Complete the Skill Assessment
+                        to unlock your AI prediction.
                       </small>
 
                     </div>
+
                   </div>
 
+                  {/* =================================================
+                      AI PREDICTION BUTTON
+                  ================================================== */}
+
                   <button
-                    className="secondary-dashboard-button"
-                    onClick={() =>
-                      goToPage(
-                        "/ai-prediction"
-                      )
+                    type="button"
+                    className={`secondary-dashboard-button ${
+                      !skillAssessmentCompleted
+                        ? "prediction-locked-button"
+                        : ""
+                    }`}
+                    disabled={
+                      !skillAssessmentCompleted
+                    }
+                    onClick={
+                      handleAIPredictionClick
                     }
                   >
-                    Generate AI Prediction →
+                    AI Prediction →
                   </button>
+
+                  {!skillAssessmentCompleted && (
+                    <p className="assessment-warning-message">
+                      🔒 Please complete the Skill Assessment first.
+                    </p>
+                  )}
+
                 </>
               )}
+
             </div>
           </div>
 
@@ -1154,9 +1384,7 @@ function Dashboard() {
 
             <div className="journey-grid">
 
-              {/* =================================================
-                  STEP 1
-              ================================================== */}
+              {/* STEP 1 */}
 
               <div
                 className={`journey-card ${
@@ -1185,9 +1413,7 @@ function Dashboard() {
 
               <div className="journey-line" />
 
-              {/* =================================================
-                  STEP 2 - DYNAMIC SKILLS
-              ================================================== */}
+              {/* STEP 2 */}
 
               <div
                 className={`journey-card ${
@@ -1205,27 +1431,13 @@ function Dashboard() {
                   Add Skills
                 </h3>
 
-                {skillCareerResult ? (
-                  <div className="journey-skill-result">
-
-                    <p>
-                      Current Best Match
-                    </p>
-
-                    <strong>
-                      {skillCareer}
-                    </strong>
-
-                    <span>
-                      Skill Match:{" "}
-                      {skillMatch}%
-                    </span>
-
-                  </div>
+                {dashboardData.skillsCount > 0 ? (
+                  <p>
+                    ✓ {dashboardData.skillsCount} skills added
+                  </p>
                 ) : (
                   <p>
-                    Add your technical skills to
-                    discover suitable careers.
+                    Add your technical skills.
                   </p>
                 )}
 
@@ -1233,9 +1445,7 @@ function Dashboard() {
 
               <div className="journey-line" />
 
-              {/* =================================================
-                  STEP 3
-              ================================================== */}
+              {/* STEP 3 */}
 
               <div
                 className={`journey-card ${
@@ -1256,16 +1466,14 @@ function Dashboard() {
                 <p>
                   {interestResult
                     ? `✓ ${interestResult.career}`
-                    : "Discover your interests."}
+                    : "Not Started"}
                 </p>
 
               </div>
 
               <div className="journey-line" />
 
-              {/* =================================================
-                  STEP 4
-              ================================================== */}
+              {/* STEP 4 */}
 
               <div
                 className={`journey-card ${
@@ -1286,7 +1494,7 @@ function Dashboard() {
                 <p>
                   {predictionResult
                     ? predictionResult.recommendedCareer
-                    : "Get your ideal career."}
+                    : "Not Available"}
                 </p>
 
               </div>

@@ -8,76 +8,41 @@ from sklearn.model_selection import train_test_split
 
 from sklearn.metrics import accuracy_score
 
-from preprocess import load_dataset, create_model
+from preprocess import (
+    load_dataset,
+    create_model,
+    FEATURES
+)
 
 
 # ==========================================
 # LOAD DATASET
 # ==========================================
 
-print(
-    "\n=========================================="
-)
-
-print(
-    "LOADING DATASET"
-)
-
-print(
-    "=========================================="
-)
+print("\n==========================================")
+print("LOADING DATASET")
+print("==========================================")
 
 
 df = load_dataset()
 
 
-print(
-    "\nDataset loaded successfully."
-)
-
-
-print(
-    "Total records:",
-    len(df)
-)
+print("\nDataset loaded successfully.")
+print("Total records:", len(df))
 
 
 # ==========================================
 # REQUIRED COLUMNS
 # ==========================================
 
-required_columns = [
-
-    "programming_level",
-
-    "preferred_field",
-
-    "tenth_marks",
-
-    "twelfth_marks",
-
-    "graduation_marks",
-
-    "semester",
-
-    "backlogs",
-
-    "skill_score",
-
-    "assessment_score",
-
-    "career"
-
-]
+required_columns = FEATURES + ["career"]
 
 
 # ==========================================
-# CHECK REQUIRED COLUMNS
+# CHECK COLUMNS
 # ==========================================
 
-print(
-    "\nChecking dataset columns..."
-)
+print("\nChecking dataset columns...")
 
 
 missing_columns = [
@@ -97,36 +62,29 @@ if missing_columns:
         "\nERROR: Dataset me ye columns missing hain:"
     )
 
-
     for column in missing_columns:
 
-        print(
-            "-",
-            column
-        )
-
+        print("-", column)
 
     raise ValueError(
         "Dataset columns incomplete hain."
     )
 
 
-print(
-    "All required columns found."
-)
+print("All required columns found.")
 
 
 # ==========================================
-# HANDLE MISSING VALUES
+# KEEP ONLY REQUIRED COLUMNS
 # ==========================================
 
-print(
-    "\nChecking missing values..."
-)
+df = df[
+    required_columns
+].copy()
 
 
 # ==========================================
-# CATEGORICAL COLUMNS
+# HANDLE CATEGORICAL VALUES
 # ==========================================
 
 df["programming_level"] = (
@@ -134,6 +92,10 @@ df["programming_level"] = (
     df["programming_level"]
 
     .fillna("Beginner")
+
+    .astype(str)
+
+    .str.strip()
 
 )
 
@@ -143,6 +105,10 @@ df["preferred_field"] = (
     df["preferred_field"]
 
     .fillna("")
+
+    .astype(str)
+
+    .str.strip()
 
 )
 
@@ -165,7 +131,15 @@ numeric_columns = [
 
     "skill_score",
 
-    "assessment_score"
+    "assessment_score",
+
+    "technology_score",
+
+    "data_score",
+
+    "web_score",
+
+    "cyber_security_score"
 
 ]
 
@@ -180,7 +154,6 @@ for column in numeric_columns:
 
     )
 
-
     df[column] = (
 
         df[column]
@@ -191,71 +164,80 @@ for column in numeric_columns:
 
 
 # ==========================================
-# FEATURES
-# ==========================================
-# IMPORTANT:
-# best_skill completely removed
-# best_skill_score completely removed
+# VALIDATE CAREER
 # ==========================================
 
-features = [
+df["career"] = (
 
-    "programming_level",
+    df["career"]
 
-    "preferred_field",
+    .fillna("")
 
-    "tenth_marks",
+    .astype(str)
 
-    "twelfth_marks",
+    .str.strip()
 
-    "graduation_marks",
-
-    "semester",
-
-    "backlogs",
-
-    "skill_score",
-
-    "assessment_score"
-
-]
-
-
-print(
-    "\n=========================================="
-)
-
-print(
-    "ML FEATURES"
-)
-
-print(
-    "=========================================="
 )
 
 
-for index, feature in enumerate(
-    features,
-    start=1
-):
+df = df[
+    df["career"] != ""
+].copy()
+
+
+# ==========================================
+# SHOW DATASET
+# ==========================================
+
+print("\n==========================================")
+print("DATASET PREVIEW")
+print("==========================================")
+
+print(df.to_string(index=False))
+
+
+# ==========================================
+# SHOW CAREER CLASSES
+# ==========================================
+
+print("\n==========================================")
+print("CAREER CLASSES")
+print("==========================================")
+
+print(
+    df["career"].value_counts()
+)
+
+
+# ==========================================
+# DATASET WARNING
+# ==========================================
+
+if len(df) < 20:
+
+    print("\nWARNING:")
+    print(
+        "Dataset me bahut kam records hain."
+    )
 
     print(
-        f"{index}. {feature}"
+        "Model sirf testing ke liye train hoga."
+    )
+
+    print(
+        "Reliable ML prediction ke liye "
+        "zyada records add karo."
     )
 
 
 # ==========================================
-# CREATE X
+# FEATURES
 # ==========================================
 
 X = df[
-    features
+    FEATURES
 ]
 
-
-# ==========================================
-# TARGET
-# ==========================================
 
 y = df[
     "career"
@@ -263,132 +245,12 @@ y = df[
 
 
 # ==========================================
-# SHOW CAREER CLASSES
-# ==========================================
-
-print(
-    "\n=========================================="
-)
-
-print(
-    "CAREER CLASSES"
-)
-
-print(
-    "=========================================="
-)
-
-
-print(
-    y.value_counts()
-)
-
-
-# ==========================================
-# SHOW DATASET SAMPLE
-# ==========================================
-
-print(
-    "\n=========================================="
-)
-
-print(
-    "DATASET SAMPLE"
-)
-
-print(
-    "=========================================="
-)
-
-
-print(
-    df.head()
-)
-
-
-# ==========================================
-# SHOW X SAMPLE
-# ==========================================
-
-print(
-    "\n=========================================="
-)
-
-print(
-    "ML INPUT SAMPLE"
-)
-
-print(
-    "=========================================="
-)
-
-
-print(
-    X.head()
-)
-
-
-# ==========================================
-# TRAIN TEST SPLIT
-# ==========================================
-
-print(
-    "\n=========================================="
-)
-
-print(
-    "SPLITTING DATASET"
-)
-
-print(
-    "=========================================="
-)
-
-
-X_train, X_test, y_train, y_test = (
-
-    train_test_split(
-
-        X,
-
-        y,
-
-        test_size=0.20,
-
-        random_state=42
-
-    )
-
-)
-
-
-print(
-    "\nTraining records:",
-    len(X_train)
-)
-
-
-print(
-    "Testing records:",
-    len(X_test)
-)
-
-
-# ==========================================
 # CREATE MODEL
 # ==========================================
 
-print(
-    "\n=========================================="
-)
-
-print(
-    "CREATING ML MODEL"
-)
-
-print(
-    "=========================================="
-)
+print("\n==========================================")
+print("CREATING ML MODEL")
+print("==========================================")
 
 
 model = create_model()
@@ -398,24 +260,16 @@ model = create_model()
 # TRAIN MODEL
 # ==========================================
 
-print(
-    "\n=========================================="
-)
-
-print(
-    "TRAINING MODEL"
-)
-
-print(
-    "=========================================="
-)
+print("\n==========================================")
+print("TRAINING MODEL")
+print("==========================================")
 
 
 model.fit(
 
-    X_train,
+    X,
 
-    y_train
+    y
 
 )
 
@@ -426,56 +280,20 @@ print(
 
 
 # ==========================================
-# SHOW MODEL FEATURES
+# OPTIONAL TEST
 # ==========================================
 
-if hasattr(
-    model,
-    "feature_names_in_"
-):
-
-    print(
-        "\nModel trained with features:"
-    )
-
-    print(
-        list(
-            model.feature_names_in_
-        )
-    )
+print("\n==========================================")
+print("MODEL TEST")
+print("==========================================")
 
 
-# ==========================================
-# TEST MODEL
-# ==========================================
+predictions = model.predict(X)
 
-print(
-    "\n=========================================="
-)
-
-print(
-    "TESTING MODEL"
-)
-
-print(
-    "=========================================="
-)
-
-
-predictions = model.predict(
-
-    X_test
-
-)
-
-
-# ==========================================
-# ACCURACY
-# ==========================================
 
 accuracy = accuracy_score(
 
-    y_test,
+    y,
 
     predictions
 
@@ -483,7 +301,7 @@ accuracy = accuracy_score(
 
 
 print(
-    "\nModel Accuracy:",
+    "Training Accuracy:",
     round(
         accuracy * 100,
         2
@@ -506,19 +324,13 @@ os.makedirs(
 
 
 # ==========================================
-# MODEL PATH
+# SAVE MODEL
 # ==========================================
 
 model_path = (
-
     "model/career_model.pkl"
-
 )
 
-
-# ==========================================
-# SAVE MODEL
-# ==========================================
 
 joblib.dump(
 
@@ -529,18 +341,9 @@ joblib.dump(
 )
 
 
-print(
-    "\n=========================================="
-)
-
-print(
-    "MODEL SAVED SUCCESSFULLY"
-)
-
-print(
-    "=========================================="
-)
-
+print("\n==========================================")
+print("MODEL SAVED SUCCESSFULLY")
+print("==========================================")
 
 print(
     "Location:",
@@ -552,14 +355,15 @@ print(
 # FINAL FEATURES
 # ==========================================
 
-print(
-    "\nFinal ML features:"
-)
+print("\nFinal ML features:")
 
 
 for index, feature in enumerate(
-    features,
+
+    FEATURES,
+
     start=1
+
 ):
 
     print(
@@ -567,21 +371,6 @@ for index, feature in enumerate(
     )
 
 
-print(
-    "\nRemoved:"
-)
-
-
-print(
-    "- best_skill"
-)
-
-
-print(
-    "- best_skill_score"
-)
-
-
-print(
-    "\nTraining completed!"
-)
+print("\n==========================================")
+print("TRAINING COMPLETED")
+print("==========================================")

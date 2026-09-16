@@ -10,10 +10,15 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/courses")
+@CrossOrigin(origins = "*")
 public class CourseController {
 
     private final CourseService courseService;
 
+
+    // ==========================================
+    // CONSTRUCTOR
+    // ==========================================
 
     public CourseController(
             CourseService courseService) {
@@ -48,7 +53,9 @@ public class CourseController {
 
         return ResponseEntity.ok(
                 courseService
-                        .getCoursesByCareer(career)
+                        .getCoursesByCareer(
+                                career
+                        )
         );
     }
 
@@ -64,9 +71,47 @@ public class CourseController {
 
         return ResponseEntity.ok(
                 courseService
-                        .getCourseById(id)
+                        .getCourseById(
+                                id
+                        )
         );
     }
-    
+
+
+    // ==========================================
+    // ADD COURSE
+    // ==========================================
+
+    @PostMapping
+    public ResponseEntity<Course>
+    addCourse(
+            @RequestBody Course course) {
+
+        return ResponseEntity.ok(
+                courseService
+                        .addCourse(
+                                course
+                        )
+        );
+    }
+
+
+    // ==========================================
+    // DELETE COURSE
+    // ==========================================
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<Void>
+    deleteCourse(
+            @PathVariable Long id) {
+
+        courseService.deleteCourse(
+                id
+        );
+
+
+        return ResponseEntity.noContent()
+                .build();
+    }
 
 }

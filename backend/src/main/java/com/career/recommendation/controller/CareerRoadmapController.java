@@ -22,8 +22,13 @@ public class CareerRoadmapController {
                 careerRoadmapService;
     }
 
+    // ==========================================
+    // GET ROADMAP
+    // ==========================================
+
     @GetMapping("/student/{studentId}")
-    public ResponseEntity<List<CareerRoadmap>> getByStudentId(
+    public ResponseEntity<List<CareerRoadmap>>
+    getByStudentId(
             @PathVariable Long studentId
     ) {
 
@@ -38,6 +43,10 @@ public class CareerRoadmapController {
 
         return ResponseEntity.ok(roadmap);
     }
+
+    // ==========================================
+    // DELETE ROADMAP
+    // ==========================================
 
     @DeleteMapping("/student/{studentId}")
     public ResponseEntity<?> deleteByStudentId(
@@ -71,6 +80,10 @@ public class CareerRoadmapController {
         }
     }
 
+    // ==========================================
+    // GENERATE ROADMAP
+    // ==========================================
+
     @PostMapping("/generate/{studentId}")
     public ResponseEntity<?> generateRoadmap(
             @PathVariable Long studentId
@@ -93,7 +106,9 @@ public class CareerRoadmapController {
 
             List<CareerRoadmap> roadmap =
                     careerRoadmapService
-                            .generateRoadmap(studentId);
+                            .generateRoadmap(
+                                    studentId
+                            );
 
             System.out.println(
                     "Generated Steps: "

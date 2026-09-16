@@ -66,9 +66,9 @@ public class StudentService {
     }
 
 
-    // =====================================================
-    // UPDATE ACADEMIC DETAILS - NEW
-    // =====================================================
+    // ==========================================
+    // UPDATE ACADEMIC DETAILS
+    // ==========================================
 
     public Optional<Student> updateAcademicDetails(
             Long id,
@@ -81,22 +81,54 @@ public class StudentService {
         Optional<Student> optionalStudent =
                 studentRepository.findById(id);
 
+        // ======================================
+        // STUDENT NOT FOUND
+        // ======================================
+
         if (optionalStudent.isEmpty()) {
 
             return Optional.empty();
         }
 
-        Student student = optionalStudent.get();
+        // ======================================
+        // GET EXISTING STUDENT
+        // ======================================
 
-        student.setTenthMarks(tenthMarks);
-        student.setTwelfthMarks(twelfthMarks);
-        student.setGraduationMarks(graduationMarks);
-        student.setSemester(semester);
-        student.setBacklogs(backlogs);
+        Student student =
+                optionalStudent.get();
+
+        // ======================================
+        // UPDATE ONLY ACADEMIC FIELDS
+        // ======================================
+
+        student.setTenthMarks(
+                tenthMarks
+        );
+
+        student.setTwelfthMarks(
+                twelfthMarks
+        );
+
+        student.setGraduationMarks(
+                graduationMarks
+        );
+
+        student.setSemester(
+                semester
+        );
+
+        student.setBacklogs(
+                backlogs
+        );
+
+        // ======================================
+        // SAVE TO DATABASE
+        // ======================================
 
         Student updated =
                 studentRepository.save(student);
 
         return Optional.of(updated);
     }
+
 }

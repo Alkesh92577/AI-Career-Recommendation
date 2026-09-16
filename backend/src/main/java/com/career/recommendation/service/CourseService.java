@@ -2,6 +2,7 @@ package com.career.recommendation.service;
 
 import com.career.recommendation.model.Course;
 import com.career.recommendation.repository.CourseRepository;
+
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -11,8 +12,14 @@ public class CourseService {
 
     private final CourseRepository courseRepository;
 
+
+    // ==========================================
+    // CONSTRUCTOR
+    // ==========================================
+
     public CourseService(
-            CourseRepository courseRepository) {
+            CourseRepository courseRepository
+    ) {
 
         this.courseRepository =
                 courseRepository;
@@ -34,10 +41,30 @@ public class CourseService {
     // ==========================================
 
     public List<Course> getCoursesByCareer(
-            String career) {
+            String career
+    ) {
+
+        // ======================================
+        // IF CAREER IS EMPTY
+        // ======================================
+
+        if (
+                career == null ||
+                career.trim().isEmpty()
+        ) {
+
+            return courseRepository.findAll();
+        }
+
+
+        // ======================================
+        // FIND BY CAREER
+        // ======================================
 
         return courseRepository
-                .findByCareer(career);
+                .findByCareerIgnoreCase(
+                        career.trim()
+                );
     }
 
 
@@ -46,14 +73,59 @@ public class CourseService {
     // ==========================================
 
     public Course getCourseById(
-            Long id) {
+            Long id
+    ) {
 
         return courseRepository
                 .findById(id)
                 .orElseThrow(
-                        () -> new RuntimeException(
-                                "Course not found with id: " + id
-                        )
+                        () ->
+                                new RuntimeException(
+                                        "Course not found with id: "
+                                                + id
+                                )
                 );
     }
+
+
+    // ==========================================
+    // ADD COURSE
+    // ==========================================
+
+    public Course addCourse(
+            Course course
+    ) {
+
+        return courseRepository.save(
+                course
+        );
+    }
+
+
+    // ==========================================
+    // DELETE COURSE
+    // ==========================================
+
+    public void deleteCourse(
+            Long id
+    ) {
+
+        if (
+                !courseRepository.existsById(
+                        id
+                )
+        ) {
+
+            throw new RuntimeException(
+                    "Course not found with id: "
+                            + id
+            );
+        }
+
+
+        courseRepository.deleteById(
+                id
+        );
+    }
+
 }

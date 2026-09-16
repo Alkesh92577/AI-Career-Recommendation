@@ -7,6 +7,37 @@ from sklearn.ensemble import RandomForestClassifier
 
 
 # ==========================================
+# FEATURES
+# ==========================================
+
+CATEGORICAL_FEATURES = [
+    "programming_level",
+    "preferred_field"
+]
+
+
+NUMERIC_FEATURES = [
+    "tenth_marks",
+    "twelfth_marks",
+    "graduation_marks",
+    "semester",
+    "backlogs",
+    "skill_score",
+    "assessment_score",
+    "technology_score",
+    "data_score",
+    "web_score",
+    "cyber_security_score"
+]
+
+
+FEATURES = (
+    CATEGORICAL_FEATURES
+    + NUMERIC_FEATURES
+)
+
+
+# ==========================================
 # LOAD DATASET
 # ==========================================
 
@@ -25,87 +56,31 @@ def load_dataset():
 
 def create_preprocessor():
 
-    # ======================================
-    # CATEGORICAL FEATURES
-    # ======================================
-
-    categorical_features = [
-
-        "programming_level",
-
-        "preferred_field",
-
-    ]
-
-
-    # ======================================
-    # NUMERIC FEATURES
-    # ======================================
-
-    numeric_features = [
-
-        "tenth_marks",
-
-        "twelfth_marks",
-
-        "graduation_marks",
-
-        "semester",
-
-        "backlogs",
-
-        "skill_score",
-
-        "assessment_score"
-
-    ]
-
-
-    # ======================================
-    # PREPROCESSOR
-    # ======================================
-
     preprocessor = ColumnTransformer(
 
         transformers=[
 
-            # --------------------------------
-            # CATEGORICAL
-            # --------------------------------
-
             (
-
                 "categorical",
 
                 OneHotEncoder(
-
                     handle_unknown="ignore"
-
                 ),
 
-                categorical_features
-
+                CATEGORICAL_FEATURES
             ),
 
-
-            # --------------------------------
-            # NUMERIC
-            # --------------------------------
-
             (
-
                 "numeric",
 
                 "passthrough",
 
-                numeric_features
-
+                NUMERIC_FEATURES
             )
 
         ]
 
     )
-
 
     return preprocessor
 
@@ -116,57 +91,40 @@ def create_preprocessor():
 
 def create_model():
 
-    # ======================================
-    # PREPROCESSOR
-    # ======================================
-
     preprocessor = create_preprocessor()
 
+    classifier = RandomForestClassifier(
 
-    # ======================================
-    # RANDOM FOREST
-    # ======================================
-
-    model = RandomForestClassifier(
-
-        n_estimators=200,
+        n_estimators=300,
 
         random_state=42,
 
-        max_depth=10,
+        max_depth=12,
 
-        class_weight="balanced"
+        min_samples_leaf=1,
+
+        class_weight="balanced",
+
+        n_jobs=-1
 
     )
 
-
-    # ======================================
-    # PIPELINE
-    # ======================================
-
-    pipeline = Pipeline(
+    model = Pipeline(
 
         steps=[
 
             (
-
                 "preprocessor",
-
                 preprocessor
-
             ),
 
             (
-
                 "classifier",
-
-                model
-
+                classifier
             )
 
         ]
 
     )
 
-
-    return pipeline
+    return model

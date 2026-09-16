@@ -1,20 +1,19 @@
 package com.career.recommendation.service;
 
 import com.career.recommendation.dto.CareerReport;
+import com.career.recommendation.model.CareerRoadmap;
 import com.career.recommendation.model.Course;
 import com.career.recommendation.model.Prediction;
 import com.career.recommendation.model.Student;
-import com.career.recommendation.model.CareerRoadmap;
 
+import com.career.recommendation.repository.CareerRoadmapRepository;
 import com.career.recommendation.repository.CourseRepository;
 import com.career.recommendation.repository.PredictionRepository;
 import com.career.recommendation.repository.StudentRepository;
-import com.career.recommendation.repository.CareerRoadmapRepository;
 
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -41,17 +40,23 @@ public class CareerReportService {
             PredictionRepository predictionRepository,
             CareerRoadmapRepository careerRoadmapRepository,
             CourseRepository courseRepository,
-            JdbcTemplate jdbcTemplate) {
+            JdbcTemplate jdbcTemplate
+    ) {
 
-        this.studentRepository = studentRepository;
+        this.studentRepository =
+                studentRepository;
 
-        this.predictionRepository = predictionRepository;
+        this.predictionRepository =
+                predictionRepository;
 
-        this.careerRoadmapRepository = careerRoadmapRepository;
+        this.careerRoadmapRepository =
+                careerRoadmapRepository;
 
-        this.courseRepository = courseRepository;
+        this.courseRepository =
+                courseRepository;
 
-        this.jdbcTemplate = jdbcTemplate;
+        this.jdbcTemplate =
+                jdbcTemplate;
     }
 
 
@@ -60,7 +65,8 @@ public class CareerReportService {
     // ==========================================
 
     public CareerReport getCareerReport(
-            Long studentId) {
+            Long studentId
+    ) {
 
         // ======================================
         // 1. GET STUDENT
@@ -70,10 +76,11 @@ public class CareerReportService {
                 studentRepository
                         .findById(studentId)
                         .orElseThrow(
-                                () -> new RuntimeException(
-                                        "Student not found with id: "
-                                                + studentId
-                                )
+                                () ->
+                                        new RuntimeException(
+                                                "Student not found with id: "
+                                                        + studentId
+                                        )
                         );
 
 
@@ -94,13 +101,28 @@ public class CareerReportService {
         // STUDENT DETAILS
         // ======================================
 
+        String studentName =
+                student.getFullName();
+
+        if (
+                studentName == null ||
+                studentName.trim().isEmpty()
+        ) {
+
+            studentName =
+                    "Student";
+        }
+
+
         report.setStudentName(
-                getStudentName(student)
+                studentName
         );
 
 
         report.setEmail(
-                getStudentEmail(student)
+                student.getEmail() != null
+                        ? student.getEmail()
+                        : ""
         );
 
 
@@ -134,7 +156,7 @@ public class CareerReportService {
 
 
         // ======================================
-        // 2. GET LATEST PREDICTION
+        // 2. GET LATEST AI PREDICTION
         // ======================================
 
         List<Prediction> predictions =
@@ -144,7 +166,10 @@ public class CareerReportService {
                         );
 
 
-        if (!predictions.isEmpty()) {
+        if (
+                predictions != null &&
+                !predictions.isEmpty()
+        ) {
 
             Prediction prediction =
                     predictions.get(0);
@@ -196,13 +221,16 @@ public class CareerReportService {
 
         if (
                 career != null &&
-                !career.equals("Not Generated")
+                !career.trim().isEmpty() &&
+                !career.equalsIgnoreCase(
+                        "Not Generated"
+                )
         ) {
 
             roadmap =
                     careerRoadmapRepository
                             .findByCareerOrderByStepNumberAsc(
-                                    career
+                                    career.trim()
                             );
         }
 
@@ -212,7 +240,9 @@ public class CareerReportService {
         // ======================================
 
         int totalSteps =
-                roadmap.size();
+                roadmap != null
+                        ? roadmap.size()
+                        : 0;
 
 
         // ======================================
@@ -224,7 +254,10 @@ public class CareerReportService {
 
         if (
                 career != null &&
-                !career.equals("Not Generated")
+                !career.trim().isEmpty() &&
+                !career.equalsIgnoreCase(
+                        "Not Generated"
+                )
         ) {
 
             try {
@@ -246,15 +279,16 @@ public class CareerReportService {
                                 sql,
                                 Integer.class,
                                 studentId,
-                                career
+                                career.trim()
                         );
 
 
-                if (result != null) {
+                if (
+                        result != null
+                ) {
 
                     completedSteps =
                             result;
-
                 }
 
             } catch (Exception error) {
@@ -276,7 +310,9 @@ public class CareerReportService {
         double roadmapProgress = 0.0;
 
 
-        if (totalSteps > 0) {
+        if (
+                totalSteps > 0
+        ) {
 
             roadmapProgress =
                     Math.round(
@@ -305,7 +341,7 @@ public class CareerReportService {
 
 
         // ======================================
-        // 4. COURSES
+        // 4. GET RECOMMENDED COURSES
         // ======================================
 
         List<CareerReport.CourseReport>
@@ -315,54 +351,62 @@ public class CareerReportService {
 
         if (
                 career != null &&
-                !career.equals("Not Generated")
+                !career.trim().isEmpty() &&
+                !career.equalsIgnoreCase(
+                        "Not Generated"
+                )
         ) {
 
             List<Course> courses =
                     courseRepository
-                            .findByCareer(
-                                    career
+                            .findByCareerIgnoreCase(
+                                    career.trim()
                             );
 
 
-            for (
-                    Course course :
-                    courses
+            if (
+                    courses != null
             ) {
 
-                CareerReport.CourseReport
-                        courseReport =
-                        new CareerReport.CourseReport();
+                for (
+                        Course course :
+                        courses
+                ) {
+
+                    CareerReport.CourseReport
+                            courseReport =
+                            new CareerReport.CourseReport();
 
 
-                courseReport.setId(
-                        course.getId()
-                );
+                    courseReport.setId(
+                            course.getId()
+                    );
 
 
-                courseReport.setCourseName(
-                        course.getCourseName()
-                );
+                    courseReport.setCourseName(
+                            course.getCourseName()
+                    );
 
 
-                courseReport.setCourseUrl(
-                        course.getCourseUrl()
-                );
+                    courseReport.setCourseUrl(
+                            course.getCourseUrl()
+                    );
 
 
-                courseReport.setDuration(
-                        course.getDuration()
-                );
+                    courseReport.setDuration(
+                            course.getDuration()
+                    );
 
 
-                courseReport.setPlatform(
-                        course.getPlatform()
-                );
+                    courseReport.setPlatform(
+                            course.getPlatform()
+                    );
 
 
-                courseReports.add(
-                        courseReport
-                );
+                    courseReports.add(
+                            courseReport
+                    );
+                }
             }
         }
 
@@ -379,85 +423,4 @@ public class CareerReportService {
         return report;
     }
 
-
-    // ==========================================
-    // STUDENT NAME
-    // ==========================================
-
-    private String getStudentName(
-            Student student) {
-
-        String[] possibleMethods = {
-                "getName",
-                "getFullName",
-                "getFirstName"
-        };
-
-
-        for (
-                String methodName :
-                possibleMethods
-        ) {
-
-            try {
-
-                Method method =
-                        student
-                                .getClass()
-                                .getMethod(
-                                        methodName
-                                );
-
-
-                Object value =
-                        method.invoke(
-                                student
-                        );
-
-
-                if (
-                        value != null &&
-                        !value.toString()
-                                .trim()
-                                .isEmpty()
-                ) {
-
-                    return value.toString();
-                }
-
-
-            } catch (Exception ignored) {
-
-            }
-        }
-
-
-        return "Student";
-    }
-
-
-    // ==========================================
-    // STUDENT EMAIL
-    // ==========================================
-
-    private String getStudentEmail(
-            Student student) {
-
-        try {
-
-            if (
-                    student.getEmail() != null
-            ) {
-
-                return student.getEmail();
-
-            }
-
-        } catch (Exception ignored) {
-
-        }
-
-
-        return "";
-    }
 }

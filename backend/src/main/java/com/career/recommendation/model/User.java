@@ -21,6 +21,13 @@ public class User {
 
     private String role = "STUDENT";
 
+    // Password reset fields
+    @Column(name = "reset_token")
+    private String resetToken;
+
+    @Column(name = "reset_token_expiry")
+    private Long resetTokenExpiry;
+
     public User() {
     }
 
@@ -62,5 +69,23 @@ public class User {
 
     public void setRole(String role) {
         this.role = role;
+    }
+
+    // Reset token getter/setter
+
+    public String getResetToken() {
+        return resetToken;
+    }
+
+    public void setResetToken(String resetToken) {
+        this.resetToken = resetToken;
+    }
+
+    public Long getResetTokenExpiry() {
+        return resetTokenExpiry;
+    }
+
+    public void setResetTokenExpiry(Long resetTokenExpiry) {
+        this.resetTokenExpiry = resetTokenExpiry;
     }
 }

@@ -7,6 +7,9 @@ import {
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
+
 import Dashboard from "./pages/Dashboard";
 import Profile from "./pages/Profile";
 import AcademicDetails from "./pages/AcademicDetails";
@@ -51,6 +54,22 @@ function App() {
           path="/login"
           element={
             <Login />
+          }
+        />
+
+        {/* FORGOT PASSWORD */}
+
+        <Route
+          path="/forgot-password"
+          element={
+            <ForgotPassword />
+          }
+        />
+
+        <Route
+          path="/reset-password"
+          element={
+            <ResetPassword />
           }
         />
 

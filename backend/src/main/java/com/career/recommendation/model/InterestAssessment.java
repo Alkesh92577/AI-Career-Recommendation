@@ -21,7 +21,7 @@ public class InterestAssessment {
     // ATTEMPT ID
     // =====================================================
 
-    @Column(name = "attempt_id", nullable = false)
+    @Column(name = "attempt_id", length = 100)
     private String attemptId;
 
     // =====================================================

@@ -1,33 +1,21 @@
 package com.career.recommendation.dto;
 
+import java.util.List;
+import java.util.Map;
 
+
+/**
+ * =========================================================
+ * PREDICTION REQUEST DTO
+ * =========================================================
+ */
 public class PredictionRequest {
-
-
-    // =====================================================
-    // STUDENT ID
-    // =====================================================
 
     private Long studentId;
 
-
-    // =====================================================
-    // PROGRAMMING KNOWLEDGE
-    // =====================================================
-
     private String programmingKnowledge;
 
-
-    // =====================================================
-    // PREFERRED CAREER / FIELD
-    // =====================================================
-
     private String preferredField;
-
-
-    // =====================================================
-    // ACADEMIC DETAILS
-    // =====================================================
 
     private Double tenthMarks;
 
@@ -39,19 +27,19 @@ public class PredictionRequest {
 
     private Integer backlogs;
 
-
-    // =====================================================
-    // SKILL SCORE
-    // =====================================================
-
     private Double skillScore;
 
-
-    // =====================================================
-    // SKILL ASSESSMENT SCORE
-    // =====================================================
-
     private Double assessmentScore;
+
+    private Double technologyScore;
+
+    private Double dataScore;
+
+    private Double webScore;
+
+    private Double cyberSecurityScore;
+
+    private List<Map<String, Object>> skills;
 
 
     // =====================================================
@@ -59,207 +47,260 @@ public class PredictionRequest {
     // =====================================================
 
     public PredictionRequest() {
-
     }
 
 
     // =====================================================
-    // STUDENT ID GETTER / SETTER
+    // STUDENT ID
     // =====================================================
 
     public Long getStudentId() {
 
         return studentId;
-
     }
 
+    public void setStudentId(
+            Long studentId) {
 
-    public void setStudentId(Long studentId) {
-
-        this.studentId = studentId;
-
+        this.studentId =
+                studentId;
     }
 
 
     // =====================================================
-    // PROGRAMMING KNOWLEDGE GETTER / SETTER
+    // PROGRAMMING KNOWLEDGE
     // =====================================================
 
     public String getProgrammingKnowledge() {
 
         return programmingKnowledge;
-
     }
-
 
     public void setProgrammingKnowledge(
             String programmingKnowledge) {
 
         this.programmingKnowledge =
                 programmingKnowledge;
-
     }
 
 
     // =====================================================
-    // PREFERRED FIELD GETTER / SETTER
+    // PREFERRED FIELD
     // =====================================================
 
     public String getPreferredField() {
 
         return preferredField;
-
     }
-
 
     public void setPreferredField(
             String preferredField) {
 
         this.preferredField =
                 preferredField;
-
     }
 
 
     // =====================================================
-    // 10TH MARKS GETTER / SETTER
+    // 10TH
     // =====================================================
 
     public Double getTenthMarks() {
 
         return tenthMarks;
-
     }
-
 
     public void setTenthMarks(
             Double tenthMarks) {
 
         this.tenthMarks =
                 tenthMarks;
-
     }
 
 
     // =====================================================
-    // 12TH MARKS GETTER / SETTER
+    // 12TH
     // =====================================================
 
     public Double getTwelfthMarks() {
 
         return twelfthMarks;
-
     }
-
 
     public void setTwelfthMarks(
             Double twelfthMarks) {
 
         this.twelfthMarks =
                 twelfthMarks;
-
     }
 
 
     // =====================================================
-    // GRADUATION MARKS GETTER / SETTER
+    // GRADUATION
     // =====================================================
 
     public Double getGraduationMarks() {
 
         return graduationMarks;
-
     }
-
 
     public void setGraduationMarks(
             Double graduationMarks) {
 
         this.graduationMarks =
                 graduationMarks;
-
     }
 
 
     // =====================================================
-    // SEMESTER GETTER / SETTER
+    // SEMESTER
     // =====================================================
 
     public Integer getSemester() {
 
         return semester;
-
     }
-
 
     public void setSemester(
             Integer semester) {
 
         this.semester =
                 semester;
-
     }
 
 
     // =====================================================
-    // BACKLOGS GETTER / SETTER
+    // BACKLOGS
     // =====================================================
 
     public Integer getBacklogs() {
 
         return backlogs;
-
     }
-
 
     public void setBacklogs(
             Integer backlogs) {
 
         this.backlogs =
                 backlogs;
-
     }
 
 
     // =====================================================
-    // SKILL SCORE GETTER / SETTER
+    // SKILL SCORE
     // =====================================================
 
     public Double getSkillScore() {
 
         return skillScore;
-
     }
-
 
     public void setSkillScore(
             Double skillScore) {
 
         this.skillScore =
                 skillScore;
-
     }
 
 
-
-
     // =====================================================
-    // ASSESSMENT SCORE GETTER / SETTER
+    // ASSESSMENT SCORE
     // =====================================================
 
     public Double getAssessmentScore() {
 
         return assessmentScore;
-
     }
-
 
     public void setAssessmentScore(
             Double assessmentScore) {
 
         this.assessmentScore =
                 assessmentScore;
-
     }
 
+
+    // =====================================================
+    // TECHNOLOGY SCORE
+    // =====================================================
+
+    public Double getTechnologyScore() {
+
+        return technologyScore;
+    }
+
+    public void setTechnologyScore(
+            Double technologyScore) {
+
+        this.technologyScore =
+                technologyScore;
+    }
+
+
+    // =====================================================
+    // DATA SCORE
+    // =====================================================
+
+    public Double getDataScore() {
+
+        return dataScore;
+    }
+
+    public void setDataScore(
+            Double dataScore) {
+
+        this.dataScore =
+                dataScore;
+    }
+
+
+    // =====================================================
+    // WEB SCORE
+    // =====================================================
+
+    public Double getWebScore() {
+
+        return webScore;
+    }
+
+    public void setWebScore(
+            Double webScore) {
+
+        this.webScore =
+                webScore;
+    }
+
+
+    // =====================================================
+    // CYBER SECURITY SCORE
+    // =====================================================
+
+    public Double getCyberSecurityScore() {
+
+        return cyberSecurityScore;
+    }
+
+    public void setCyberSecurityScore(
+            Double cyberSecurityScore) {
+
+        this.cyberSecurityScore =
+                cyberSecurityScore;
+    }
+
+
+    // =====================================================
+    // INDIVIDUAL SKILLS
+    // =====================================================
+
+    public List<Map<String, Object>> getSkills() {
+
+        return skills;
+    }
+
+    public void setSkills(
+            List<Map<String, Object>> skills) {
+
+        this.skills =
+                skills;
+    }
 }

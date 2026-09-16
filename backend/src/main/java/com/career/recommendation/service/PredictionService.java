@@ -24,18 +24,8 @@ public class PredictionService {
 
     private final RestTemplate restTemplate;
 
-
-    // =====================================================
-    // ML SERVICE URL
-    // =====================================================
-
     @Value("${ml.service.url}")
     private String mlServiceUrl;
-
-
-    // =====================================================
-    // CONSTRUCTOR
-    // =====================================================
 
     public PredictionService(
             PredictionRepository predictionRepository) {
@@ -47,18 +37,12 @@ public class PredictionService {
                 new RestTemplate();
     }
 
-
     // =====================================================
     // PREDICT
     // =====================================================
 
     public Prediction predict(
             PredictionRequest request) {
-
-
-        // =================================================
-        // VALIDATE REQUEST
-        // =================================================
 
         if (request == null) {
 
@@ -67,7 +51,6 @@ public class PredictionService {
             );
         }
 
-
         if (request.getStudentId() == null) {
 
             throw new IllegalArgumentException(
@@ -75,71 +58,107 @@ public class PredictionService {
             );
         }
 
-
         // =================================================
-        // CREATE ML REQUEST DATA
+        // FLASK DATA
         // =================================================
 
         Map<String, Object> flaskData =
                 new HashMap<>();
-
 
         flaskData.put(
                 "programming_level",
                 request.getProgrammingKnowledge()
         );
 
-
         flaskData.put(
                 "preferred_field",
                 request.getPreferredField()
         );
-
 
         flaskData.put(
                 "tenth_marks",
                 request.getTenthMarks()
         );
 
-
         flaskData.put(
                 "twelfth_marks",
                 request.getTwelfthMarks()
         );
-
 
         flaskData.put(
                 "graduation_marks",
                 request.getGraduationMarks()
         );
 
-
         flaskData.put(
                 "semester",
                 request.getSemester()
         );
-
 
         flaskData.put(
                 "backlogs",
                 request.getBacklogs()
         );
 
-
         flaskData.put(
                 "skill_score",
                 request.getSkillScore()
         );
-
 
         flaskData.put(
                 "assessment_score",
                 request.getAssessmentScore()
         );
 
+        flaskData.put(
+                "technology_score",
+                getSafeScore(
+                        request.getTechnologyScore()
+                )
+        );
+
+        flaskData.put(
+                "data_score",
+                getSafeScore(
+                        request.getDataScore()
+                )
+        );
+
+        flaskData.put(
+                "web_score",
+                getSafeScore(
+                        request.getWebScore()
+                )
+        );
+
+        flaskData.put(
+                "cyber_security_score",
+                getSafeScore(
+                        request.getCyberSecurityScore()
+                )
+        );
 
         // =================================================
-        // DEBUG
+        // SKILLS
+        // =================================================
+
+        if (request.getSkills() != null) {
+
+            flaskData.put(
+                    "skills",
+                    request.getSkills()
+            );
+
+        } else {
+
+            flaskData.put(
+                    "skills",
+                    List.of()
+            );
+        }
+
+        // =================================================
+        // DEBUG REQUEST
         // =================================================
 
         System.out.println(
@@ -147,7 +166,7 @@ public class PredictionService {
         );
 
         System.out.println(
-                "AI CAREER PREDICTION REQUEST"
+                "🤖 AI CAREER PREDICTION REQUEST"
         );
 
         System.out.println(
@@ -163,13 +182,52 @@ public class PredictionService {
         );
 
         System.out.println(
-                "\nDATA SENT TO ML SERVICE:"
+                "\n📤 DATA SENT TO FLASK:"
         );
 
         System.out.println(
                 flaskData
         );
 
+        System.out.println(
+                "\n🛠 SKILLS SENT TO FLASK:"
+        );
+
+        System.out.println(
+                flaskData.get("skills")
+        );
+
+        System.out.println(
+                "\n📊 CATEGORY SCORES:"
+        );
+
+        System.out.println(
+                "Technology: "
+                        + flaskData.get(
+                        "technology_score"
+                )
+        );
+
+        System.out.println(
+                "Data: "
+                        + flaskData.get(
+                        "data_score"
+                )
+        );
+
+        System.out.println(
+                "Web: "
+                        + flaskData.get(
+                        "web_score"
+                )
+        );
+
+        System.out.println(
+                "Cyber Security: "
+                        + flaskData.get(
+                        "cyber_security_score"
+                )
+        );
 
         // =================================================
         // HEADERS
@@ -182,20 +240,14 @@ public class PredictionService {
                 MediaType.APPLICATION_JSON
         );
 
-
-        // =================================================
-        // HTTP ENTITY
-        // =================================================
-
         HttpEntity<Map<String, Object>> entity =
                 new HttpEntity<>(
                         flaskData,
                         headers
                 );
 
-
         // =================================================
-        // CALL ML SERVICE
+        // CALL FLASK
         // =================================================
 
         ResponseEntity<Map> response;
@@ -209,6 +261,22 @@ public class PredictionService {
                             Map.class
                     );
 
+            System.out.println(
+                    "\n===================================="
+            );
+
+            System.out.println(
+                    "🤖 FLASK RAW RESPONSE:"
+            );
+
+            System.out.println(
+                    response.getBody()
+            );
+
+            System.out.println(
+                    "===================================="
+            );
+
         } catch (Exception e) {
 
             System.out.println(
@@ -216,7 +284,7 @@ public class PredictionService {
             );
 
             System.out.println(
-                    "ML SERVICE CONNECTION ERROR"
+                    "❌ ML SERVICE CONNECTION ERROR"
             );
 
             System.out.println(
@@ -233,39 +301,12 @@ public class PredictionService {
             );
         }
 
-
         // =================================================
-        // DEBUG RESPONSE
-        // =================================================
-
-        System.out.println(
-                "\n===================================="
-        );
-
-        System.out.println(
-                "ML SERVICE RESPONSE"
-        );
-
-        System.out.println(
-                "===================================="
-        );
-
-        System.out.println(
-                response.getBody()
-        );
-
-        System.out.println(
-                "===================================="
-        );
-
-
-        // =================================================
-        // GET RESPONSE
+        // RESULT
         // =================================================
 
         Map<String, Object> result =
                 response.getBody();
-
 
         if (result == null) {
 
@@ -274,103 +315,159 @@ public class PredictionService {
             );
         }
 
-
         // =================================================
-        // GET CAREER
+        // BACKEND CAREER
         // =================================================
 
-        Object careerObject =
+        Object backendCareerObject =
                 result.get("career");
 
+        if (backendCareerObject == null) {
 
-        if (careerObject == null) {
-
-            throw new RuntimeException(
-                    "Career was not found in ML service response."
-            );
-        }
-
-
-        String career =
-                careerObject.toString();
-
-
-        // =================================================
-        // GET CONFIDENCE
-        // =================================================
-
-        Double confidence = null;
-
-
-        Object confidenceObject =
-                result.get("confidence");
-
-
-        if (confidenceObject != null) {
-
-            confidence =
-                    Double.valueOf(
-                            confidenceObject.toString()
+            backendCareerObject =
+                    result.get(
+                            "recommendedCareer"
                     );
         }
 
+        String backendCareer =
+                backendCareerObject != null
+                        ? backendCareerObject.toString()
+                        : null;
 
         // =================================================
-        // CREATE REASON
+        // CATEGORY SCORES
         // =================================================
 
-        String reason =
-                "Career recommendation generated using AI/ML "
-                        + "model based on programming knowledge, "
-                        + "preferred field, academic performance, "
-                        + "skills and assessment score.";
-
-
-        // =================================================
-        // CREATE PREDICTION ENTITY
-        // =================================================
-
-        Prediction prediction =
-                new Prediction();
-
-
-        prediction.setStudentId(
-                request.getStudentId()
-        );
-
-
-        prediction.setRecommendedCareer(
-                career
-        );
-
-
-        prediction.setConfidence(
-                confidence
-        );
-
-
-        prediction.setReason(
-                reason
-        );
-
-
-        prediction.setCreatedAt(
-                LocalDateTime.now()
-        );
-
-
-        // =================================================
-        // SAVE PREDICTION IN MYSQL
-        // =================================================
-
-        Prediction savedPrediction =
-                predictionRepository.save(
-                        prediction
+        double technologyScore =
+                getSafeScore(
+                        request.getTechnologyScore()
                 );
 
+        double dataScore =
+                getSafeScore(
+                        request.getDataScore()
+                );
+
+        double webScore =
+                getSafeScore(
+                        request.getWebScore()
+                );
+
+        double cyberSecurityScore =
+                getSafeScore(
+                        request.getCyberSecurityScore()
+                );
 
         // =================================================
-        // SUCCESS DEBUG
+        // DETERMINE STRONGEST CATEGORY
+        // =================================================
+
+        String finalCareer =
+                backendCareer;
+
+        String finalSource =
+                result.get("predictionSource") != null
+                        ? result.get(
+                                "predictionSource"
+                        ).toString()
+                        : "machine_learning_model";
+
+        double finalConfidence =
+                result.get("confidence") != null
+                        ? toDouble(
+                                result.get("confidence")
+                        )
+                        : 0.0;
+
+        String strongestCategory =
+                "technology";
+
+        double strongestScore =
+                technologyScore;
+
+        if (dataScore > strongestScore) {
+
+            strongestCategory =
+                    "data";
+
+            strongestScore =
+                    dataScore;
+        }
+
+        if (webScore > strongestScore) {
+
+            strongestCategory =
+                    "web";
+
+            strongestScore =
+                    webScore;
+        }
+
+        if (
+                cyberSecurityScore
+                        > strongestScore
+        ) {
+
+            strongestCategory =
+                    "cyber_security";
+
+            strongestScore =
+                    cyberSecurityScore;
+        }
+
+        // =================================================
+        // CATEGORY IS AUTHORITATIVE
+        // =================================================
+
+        if (strongestScore > 0) {
+
+            switch (
+                    strongestCategory
+            ) {
+
+                case "technology":
+
+                    finalCareer =
+                            "Software Developer";
+
+                    break;
+
+                case "data":
+
+                    finalCareer =
+                            "Data Analyst";
+
+                    break;
+
+                case "web":
+
+                    finalCareer =
+                            "Web Developer";
+
+                    break;
+
+                case "cyber_security":
+
+                    finalCareer =
+                            "Cyber Security Specialist";
+
+                    break;
+
+                default:
+
+                    break;
+            }
+
+            finalSource =
+                    "skill_assessment_category";
+
+            finalConfidence =
+                    strongestScore;
+        }
+
+        // =================================================
+        // FINAL DEBUG
         // =================================================
 
         System.out.println(
@@ -378,7 +475,7 @@ public class PredictionService {
         );
 
         System.out.println(
-                "PREDICTION SAVED SUCCESSFULLY"
+                "🎯 FINAL SPRING BOOT CAREER"
         );
 
         System.out.println(
@@ -386,8 +483,107 @@ public class PredictionService {
         );
 
         System.out.println(
-                "Prediction ID: "
-                        + savedPrediction.getId()
+                "Flask Career:"
+        );
+
+        System.out.println(
+                backendCareer
+        );
+
+        System.out.println(
+                "\nStrongest Category:"
+        );
+
+        System.out.println(
+                strongestCategory
+        );
+
+        System.out.println(
+                "\nStrongest Category Score:"
+        );
+
+        System.out.println(
+                strongestScore
+        );
+
+        System.out.println(
+                "\nFINAL CAREER:"
+        );
+
+        System.out.println(
+                finalCareer
+        );
+
+        System.out.println(
+                "\nFINAL CONFIDENCE:"
+        );
+
+        System.out.println(
+                finalConfidence
+        );
+
+        System.out.println(
+                "\nFINAL SOURCE:"
+        );
+
+        System.out.println(
+                finalSource
+        );
+
+        System.out.println(
+                "===================================="
+        );
+
+        // =================================================
+        // REASON
+        // =================================================
+
+        String reason =
+                createPredictionReason(
+                        finalCareer,
+                        finalSource,
+                        strongestCategory,
+                        strongestScore
+                );
+
+        // =================================================
+        // SAVE
+        // =================================================
+
+        Prediction prediction =
+                new Prediction();
+
+        prediction.setStudentId(
+                request.getStudentId()
+        );
+
+        prediction.setRecommendedCareer(
+                finalCareer
+        );
+
+        prediction.setConfidence(
+                finalConfidence
+        );
+
+        prediction.setReason(
+                reason
+        );
+
+        prediction.setCreatedAt(
+                LocalDateTime.now()
+        );
+
+        Prediction savedPrediction =
+                predictionRepository.save(
+                        prediction
+                );
+
+        System.out.println(
+                "\n===================================="
+        );
+
+        System.out.println(
+                "💾 PREDICTION SAVED SUCCESSFULLY"
         );
 
         System.out.println(
@@ -402,10 +598,145 @@ public class PredictionService {
                         .getConfidence()
         );
 
+        System.out.println(
+                "===================================="
+        );
 
         return savedPrediction;
     }
 
+    // =====================================================
+    // SAFE SCORE
+    // =====================================================
+
+    private Double getSafeScore(
+            Double score) {
+
+        if (score == null) {
+
+            return 0.0;
+        }
+
+        if (score < 0) {
+
+            return 0.0;
+        }
+
+        if (score > 100) {
+
+            return 100.0;
+        }
+
+        return score;
+    }
+
+    // =====================================================
+    // DOUBLE HELPER
+    // =====================================================
+
+    private double toDouble(
+            Object value) {
+
+        if (value == null) {
+
+            return 0.0;
+        }
+
+        try {
+
+            return Double.parseDouble(
+                    value.toString()
+            );
+
+        } catch (Exception e) {
+
+            return 0.0;
+        }
+    }
+
+    // =====================================================
+    // REASON
+    // =====================================================
+
+    private String createPredictionReason(
+
+            String career,
+
+            String source,
+
+            String category,
+
+            double score) {
+
+        StringBuilder reason =
+                new StringBuilder();
+
+        reason.append(
+                "Career recommendation generated using "
+                        + "your profile, skills and Skill "
+                        + "Assessment results. "
+        );
+
+        if (score > 0) {
+
+            reason.append(
+                    "Your strongest Skill Assessment "
+                            + "category was "
+                            + formatCategoryName(
+                            category
+                    )
+                            + " with a score of "
+                            + score
+                            + "%. "
+            );
+        }
+
+        reason.append(
+                "Final prediction source: "
+                        + source
+                        + "."
+        );
+
+        return reason.toString();
+    }
+
+    // =====================================================
+    // FORMAT CATEGORY
+    // =====================================================
+
+    private String formatCategoryName(
+            String category) {
+
+        if (category == null) {
+
+            return "";
+        }
+
+        switch (
+                category.toLowerCase()
+        ) {
+
+            case "technology":
+
+                return "Technology / Software Development";
+
+            case "data":
+
+                return "Data / Analytics";
+
+            case "web":
+
+                return "Web Development";
+
+            case "cyber_security":
+
+                return "Cyber Security";
+
+            default:
+
+                return category;
+        }
+    }
 
     // =====================================================
     // GET STUDENT PREDICTIONS
@@ -421,12 +752,12 @@ public class PredictionService {
                 );
     }
 
-
     // =====================================================
-    // GET LATEST STUDENT PREDICTION
+    // GET LATEST
     // =====================================================
 
-    public Prediction getLatestStudentPrediction(
+    public Prediction
+    getLatestStudentPrediction(
             Long studentId) {
 
         return predictionRepository
@@ -435,9 +766,8 @@ public class PredictionService {
                 );
     }
 
-
     // =====================================================
-    // GET ALL PREDICTIONS
+    // GET ALL
     // =====================================================
 
     public List<Prediction>

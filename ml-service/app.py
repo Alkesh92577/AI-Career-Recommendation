@@ -1,29 +1,30 @@
 from flask import Flask, request, jsonify
+
 import joblib
 import pandas as pd
 import os
 import traceback
 
 
-# ==========================================
+# ==========================================================
 # CREATE FLASK APP
-# ==========================================
+# ==========================================================
 
 app = Flask(__name__)
 
 
-# ==========================================
+# ==========================================================
 # BASE DIRECTORY
-# ==========================================
+# ==========================================================
 
 BASE_DIR = os.path.dirname(
     os.path.abspath(__file__)
 )
 
 
-# ==========================================
+# ==========================================================
 # MODEL PATH
-# ==========================================
+# ==========================================================
 
 MODEL_PATH = os.path.join(
     BASE_DIR,
@@ -32,64 +33,40 @@ MODEL_PATH = os.path.join(
 )
 
 
-# ==========================================
-# LOAD TRAINED MODEL
-# ==========================================
+# ==========================================================
+# LOAD MODEL
+# ==========================================================
 
-print(
-    "\n=========================================="
-)
-
-print(
-    "LOADING ML MODEL"
-)
-
-print(
-    "=========================================="
-)
-
-print(
-    "Model path:",
-    MODEL_PATH
-)
+print("\n==========================================")
+print("LOADING ML MODEL")
+print("==========================================")
+print("Model path:", MODEL_PATH)
 
 
 if not os.path.exists(MODEL_PATH):
 
     raise FileNotFoundError(
-        f"ML model not found: {MODEL_PATH}\n"
-        "Please make sure career_model.pkl exists "
-        "inside the model folder."
+        f"ML model not found: {MODEL_PATH}"
     )
 
 
 try:
 
-    model = joblib.load(
-        MODEL_PATH
-    )
+    model = joblib.load(MODEL_PATH)
 
-    print(
-        "ML model loaded successfully!"
-    )
-
+    print("ML model loaded successfully!")
 
 except Exception as e:
 
-    print(
-        "ERROR: Failed to load ML model"
-    )
-
-    print(
-        str(e)
-    )
+    print("ERROR: Failed to load ML model")
+    print(str(e))
 
     raise e
 
 
-# ==========================================
-# REQUIRED MODEL FEATURES
-# ==========================================
+# ==========================================================
+# MODEL FEATURES
+# ==========================================================
 
 FEATURES = [
 
@@ -109,24 +86,581 @@ FEATURES = [
 
     "skill_score",
 
-    "assessment_score"
+    "assessment_score",
+
+    "technology_score",
+
+    "data_score",
+
+    "web_score",
+
+    "cyber_security_score"
 
 ]
 
 
-# ==========================================
-# HOME API
-# ==========================================
+# ==========================================================
+# CATEGORY → CAREER
+# ==========================================================
+
+CATEGORY_CAREERS = {
+
+    "technology":
+        "Software Developer",
+
+    "data":
+        "Data Analyst",
+
+    "web":
+        "Web Developer",
+
+    "cyber_security":
+        "Cyber Security Specialist"
+
+}
+
+
+# ==========================================================
+# DETAILED CAREER SKILLS
+# ==========================================================
+
+CAREER_SKILLS = {
+
+    "Software Developer": {
+
+        "core": [
+            "C",
+            "C++",
+            "Java",
+            "Python"
+        ],
+
+        "supporting": [
+            "JavaScript",
+            "SQL",
+            "MySQL",
+            "Spring Boot",
+            "Node.js"
+        ]
+
+    },
+
+    "Java Backend Developer": {
+
+        "core": [
+            "Java",
+            "Spring Boot"
+        ],
+
+        "supporting": [
+            "SQL",
+            "MySQL",
+            "MongoDB"
+        ]
+
+    },
+
+    "Web Developer": {
+
+        "core": [
+            "HTML",
+            "CSS",
+            "JavaScript"
+        ],
+
+        "supporting": [
+            "React",
+            "Node.js",
+            "MongoDB"
+        ]
+
+    },
+
+    "Full Stack Developer": {
+
+        "core": [
+            "JavaScript",
+            "React"
+        ],
+
+        "supporting": [
+            "HTML",
+            "CSS",
+            "Node.js",
+            "MongoDB",
+            "SQL"
+        ]
+
+    },
+
+    "Data Analyst": {
+
+        "core": [
+            "Python",
+            "SQL",
+            "Data Analysis"
+        ],
+
+        "supporting": [
+            "MySQL",
+            "Machine Learning"
+        ]
+
+    },
+
+    "Machine Learning Engineer": {
+
+        "core": [
+            "Python",
+            "Machine Learning"
+        ],
+
+        "supporting": [
+            "Data Analysis",
+            "SQL"
+        ]
+
+    },
+
+    "Database Developer": {
+
+        "core": [
+            "SQL",
+            "MySQL"
+        ],
+
+        "supporting": [
+            "MongoDB",
+            "Python",
+            "Data Analysis"
+        ]
+
+    },
+
+    "Data Engineer": {
+
+        "core": [
+            "Python",
+            "SQL"
+        ],
+
+        "supporting": [
+            "MySQL",
+            "MongoDB",
+            "Data Analysis"
+        ]
+
+    }
+
+}
+
+
+# ==========================================================
+# NORMALIZE SKILL
+# ==========================================================
+
+def normalize_skill(skill):
+
+    if skill is None:
+        return ""
+
+    return str(skill).strip().lower()
+
+
+# ==========================================================
+# CALCULATE SKILL CAREER SCORE
+# ==========================================================
+
+def calculate_skill_career_score(
+    career,
+    user_skills
+):
+
+    career_data = CAREER_SKILLS.get(
+        career
+    )
+
+    if not career_data:
+
+        return {
+            "score": 0,
+            "matched_core": [],
+            "matched_supporting": [],
+            "missing_core": []
+        }
+
+
+    user_skill_map = {}
+
+
+    # ======================================================
+    # USER SKILLS
+    # ======================================================
+
+    for item in user_skills:
+
+        if not isinstance(
+            item,
+            dict
+        ):
+            continue
+
+
+        skill_name = (
+
+            item.get("skillName")
+
+            or item.get("name")
+
+            or item.get("skill")
+
+            or ""
+
+        )
+
+
+        level = item.get(
+            "level",
+            1
+        )
+
+
+        normalized = normalize_skill(
+            skill_name
+        )
+
+
+        if not normalized:
+            continue
+
+
+        try:
+
+            level_score = float(
+                level
+            )
+
+        except Exception:
+
+            level_text = str(
+                level
+            ).lower()
+
+
+            if level_text == "advanced":
+
+                level_score = 3
+
+            elif level_text == "intermediate":
+
+                level_score = 2
+
+            else:
+
+                level_score = 1
+
+
+        if (
+
+            normalized not in user_skill_map
+
+            or
+
+            level_score >
+            user_skill_map[normalized]
+
+        ):
+
+            user_skill_map[
+                normalized
+            ] = level_score
+
+
+    # ======================================================
+    # CAREER SKILLS
+    # ======================================================
+
+    core_skills = career_data.get(
+        "core",
+        []
+    )
+
+    supporting_skills = career_data.get(
+        "supporting",
+        []
+    )
+
+
+    matched_core = []
+
+    matched_supporting = []
+
+
+    core_score = 0
+
+    supporting_score = 0
+
+
+    # ======================================================
+    # CORE MATCH
+    # ======================================================
+
+    for skill in core_skills:
+
+        normalized = normalize_skill(
+            skill
+        )
+
+
+        if normalized in user_skill_map:
+
+            level_score = user_skill_map[
+                normalized
+            ]
+
+
+            matched_core.append(
+                skill
+            )
+
+
+            core_score += (
+                level_score
+            )
+
+
+    # ======================================================
+    # SUPPORTING MATCH
+    # ======================================================
+
+    for skill in supporting_skills:
+
+        normalized = normalize_skill(
+            skill
+        )
+
+
+        if normalized in user_skill_map:
+
+            level_score = user_skill_map[
+                normalized
+            ]
+
+
+            matched_supporting.append(
+                skill
+            )
+
+
+            supporting_score += (
+                level_score
+            )
+
+
+    # ======================================================
+    # CORE COMPLETION
+    # ======================================================
+
+    if len(core_skills) > 0:
+
+        core_completion = (
+
+            len(matched_core)
+            /
+            len(core_skills)
+
+        )
+
+    else:
+
+        core_completion = 0
+
+
+    # ======================================================
+    # CORE PERCENTAGE
+    # ======================================================
+
+    if len(core_skills) > 0:
+
+        max_core_score = (
+            len(core_skills) * 3
+        )
+
+
+        core_percentage = (
+
+            core_score
+            /
+            max_core_score
+
+        ) * 100
+
+    else:
+
+        core_percentage = 0
+
+
+    # ======================================================
+    # SUPPORTING PERCENTAGE
+    # ======================================================
+
+    if len(supporting_skills) > 0:
+
+        max_supporting_score = (
+            len(supporting_skills) * 3
+        )
+
+
+        supporting_percentage = (
+
+            supporting_score
+            /
+            max_supporting_score
+
+        ) * 100
+
+    else:
+
+        supporting_percentage = 0
+
+
+    # ======================================================
+    # FINAL SKILL SCORE
+    # ======================================================
+
+    skill_score = (
+
+        core_percentage * 0.75
+
+        +
+
+        supporting_percentage * 0.25
+
+    )
+
+
+    # ======================================================
+    # CORE COMPLETION PENALTY
+    # ======================================================
+
+    skill_score *= core_completion
+
+
+    # ======================================================
+    # NO CORE = NO CAREER MATCH
+    # ======================================================
+
+    if len(matched_core) == 0:
+
+        skill_score = 0
+
+
+    # ======================================================
+    # MISSING CORE
+    # ======================================================
+
+    missing_core = [
+
+        skill
+
+        for skill in core_skills
+
+        if normalize_skill(skill)
+        not in user_skill_map
+
+    ]
+
+
+    return {
+
+        "score":
+            round(
+                skill_score,
+                2
+            ),
+
+        "matched_core":
+            matched_core,
+
+        "matched_supporting":
+            matched_supporting,
+
+        "missing_core":
+            missing_core
+
+    }
+
+
+# ==========================================================
+# CALCULATE ALL SKILL CAREER SCORES
+# ==========================================================
+
+def calculate_all_skill_career_scores(
+    user_skills
+):
+
+    results = []
+
+
+    for career in CAREER_SKILLS:
+
+        result = calculate_skill_career_score(
+
+            career,
+
+            user_skills
+
+        )
+
+
+        results.append({
+
+            "career":
+                career,
+
+            "score":
+                result["score"],
+
+            "matchedCore":
+                result["matched_core"],
+
+            "matchedSupporting":
+                result["matched_supporting"],
+
+            "missingCore":
+                result["missing_core"]
+
+        })
+
+
+    results.sort(
+
+        key=lambda x:
+        x["score"],
+
+        reverse=True
+
+    )
+
+
+    return results
+
+
+# ==========================================================
+# HOME
+# ==========================================================
 
 @app.route(
     "/",
     methods=["GET"]
 )
+
 def home():
 
     return jsonify({
 
-        "success": True,
+        "success":
+            True,
 
         "message":
             "AI Career Recommendation ML API is running",
@@ -143,19 +677,21 @@ def home():
     }), 200
 
 
-# ==========================================
-# HEALTH CHECK API
-# ==========================================
+# ==========================================================
+# HEALTH
+# ==========================================================
 
 @app.route(
     "/health",
     methods=["GET"]
 )
+
 def health():
 
     return jsonify({
 
-        "success": True,
+        "success":
+            True,
 
         "status":
             "UP",
@@ -169,21 +705,22 @@ def health():
     }), 200
 
 
-# ==========================================
-# PREDICTION API
-# ==========================================
+# ==========================================================
+# PREDICTION
+# ==========================================================
 
 @app.route(
     "/predict",
     methods=["POST"]
 )
+
 def predict():
 
     try:
 
-        # ==================================
-        # GET JSON DATA
-        # ==================================
+        # ==================================================
+        # GET DATA
+        # ==================================================
 
         data = request.get_json()
 
@@ -209,7 +746,7 @@ def predict():
         )
 
         print(
-            "NEW PREDICTION REQUEST"
+            "📥 NEW PREDICTION REQUEST"
         )
 
         print(
@@ -225,23 +762,22 @@ def predict():
         )
 
 
-        # ==================================
-        # CHECK REQUIRED FIELDS
-        # ==================================
+        # ==================================================
+        # REQUIRED FIELDS
+        # ==================================================
 
-        missing_fields = []
+        missing_fields = [
+
+            field
+
+            for field in FEATURES
+
+            if field not in data
+
+        ]
 
 
-        for field in FEATURES:
-
-            if field not in data:
-
-                missing_fields.append(
-                    field
-                )
-
-
-        if len(missing_fields) > 0:
+        if missing_fields:
 
             return jsonify({
 
@@ -257,9 +793,9 @@ def predict():
             }), 400
 
 
-        # ==================================
-        # GET INPUT VALUES
-        # ==================================
+        # ==================================================
+        # READ INPUT
+        # ==================================================
 
         programming_level = str(
             data.get(
@@ -324,9 +860,137 @@ def predict():
         )
 
 
-        # ==================================
-        # CREATE INPUT DATAFRAME
-        # ==================================
+        technology_score = float(
+            data.get(
+                "technology_score"
+            )
+        )
+
+
+        data_score = float(
+            data.get(
+                "data_score"
+            )
+        )
+
+
+        web_score = float(
+            data.get(
+                "web_score"
+            )
+        )
+
+
+        cyber_security_score = float(
+            data.get(
+                "cyber_security_score"
+            )
+        )
+
+
+        # ==================================================
+        # USER SKILLS
+        # ==================================================
+
+        user_skills = data.get(
+            "skills",
+            []
+        )
+
+
+        if not isinstance(
+            user_skills,
+            list
+        ):
+
+            user_skills = []
+
+
+        # ==================================================
+        # CATEGORY SCORES
+        # ==================================================
+
+        category_scores = {
+
+            "technology":
+                technology_score,
+
+            "data":
+                data_score,
+
+            "web":
+                web_score,
+
+            "cyber_security":
+                cyber_security_score
+
+        }
+
+
+        # ==================================================
+        # STRONGEST CATEGORY
+        # ==================================================
+
+        strongest_category = max(
+
+            category_scores,
+
+            key=category_scores.get
+
+        )
+
+
+        strongest_category_score = (
+
+            category_scores[
+                strongest_category
+            ]
+
+        )
+
+
+        # ==================================================
+        # PRINT CATEGORY INFORMATION
+        # ==================================================
+
+        print(
+            "\n📊 CATEGORY SCORES RECEIVED:"
+        )
+
+        print(
+            "Technology:",
+            technology_score
+        )
+
+        print(
+            "Data:",
+            data_score
+        )
+
+        print(
+            "Web:",
+            web_score
+        )
+
+        print(
+            "Cyber Security:",
+            cyber_security_score
+        )
+
+        print(
+            "Strongest Category:",
+            strongest_category
+        )
+
+        print(
+            "Strongest Category Score:",
+            strongest_category_score
+        )
+
+
+        # ==================================================
+        # MODEL INPUT
+        # ==================================================
 
         input_data = pd.DataFrame([{
 
@@ -355,106 +1019,47 @@ def predict():
                 skill_score,
 
             "assessment_score":
-                assessment_score
+                assessment_score,
+
+            "technology_score":
+                technology_score,
+
+            "data_score":
+                data_score,
+
+            "web_score":
+                web_score,
+
+            "cyber_security_score":
+                cyber_security_score
 
         }])
 
-
-        # ==================================
-        # FORCE CORRECT COLUMN ORDER
-        # ==================================
 
         input_data = input_data[
             FEATURES
         ]
 
 
-        # ==================================
-        # SHOW INPUT
-        # ==================================
+        # ==================================================
+        # ML MODEL PREDICTION
+        # ==================================================
 
-        print(
-            "\nInput Data:"
-        )
-
-        print(
+        ml_prediction = model.predict(
             input_data
         )
 
 
-        print(
-            "\nFeatures sent to ML model:"
-        )
-
-        print(
-            FEATURES
+        ml_career = str(
+            ml_prediction[0]
         )
 
 
-        # ==================================
-        # CHECK MODEL FEATURES
-        # ==================================
+        # ==================================================
+        # ML CONFIDENCE
+        # ==================================================
 
-        if hasattr(
-            model,
-            "feature_names_in_"
-        ):
-
-            model_features = list(
-                model.feature_names_in_
-            )
-
-
-            print(
-                "\nModel expects features:"
-            )
-
-            print(
-                model_features
-            )
-
-
-            if model_features != FEATURES:
-
-                return jsonify({
-
-                    "success":
-                        False,
-
-                    "error":
-                        "ML model feature mismatch",
-
-                    "message":
-                        "The loaded ML model expects different features.",
-
-                    "model_features":
-                        model_features,
-
-                    "required_features":
-                        FEATURES
-
-                }), 500
-
-
-        # ==================================
-        # PREDICT CAREER
-        # ==================================
-
-        prediction = model.predict(
-            input_data
-        )
-
-
-        career = str(
-            prediction[0]
-        )
-
-
-        # ==================================
-        # PREDICT PROBABILITY
-        # ==================================
-
-        confidence = None
+        ml_confidence = None
 
 
         if hasattr(
@@ -462,21 +1067,191 @@ def predict():
             "predict_proba"
         ):
 
-            probabilities = model.predict_proba(
-                input_data
+            probabilities = (
+                model.predict_proba(
+                    input_data
+                )
             )
 
 
-            confidence = float(
-                max(
-                    probabilities[0]
-                ) * 100
+            ml_confidence = (
+
+                float(
+                    max(
+                        probabilities[0]
+                    )
+                )
+                * 100
+
             )
 
 
-        # ==================================
+        # ==================================================
+        # SKILL CAREER SCORES
+        # ==================================================
+
+        skill_career_scores = (
+            calculate_all_skill_career_scores(
+                user_skills
+            )
+        )
+
+
+        best_skill_career = None
+
+
+        if skill_career_scores:
+
+            best_skill_career = (
+                skill_career_scores[0]
+            )
+
+
+        skill_match_score = 0
+
+
+        if best_skill_career:
+
+            skill_match_score = float(
+                best_skill_career["score"]
+            )
+
+
+        # ==================================================
+        # IMPORTANT FINAL CAREER LOGIC
+        # ==================================================
+        #
+        # Skill Assessment category is authoritative.
+        #
+        # Example:
+        #
+        # Technology = 100
+        # Data = 0
+        # Web = 0
+        # Cyber = 0
+        #
+        # FINAL = Software Developer
+        #
+        # ML model is NOT allowed to replace
+        # a valid assessment category.
+        #
+        # ==================================================
+
+        if strongest_category_score > 0:
+
+            final_career = (
+                CATEGORY_CAREERS[
+                    strongest_category
+                ]
+            )
+
+            prediction_source = (
+                "skill_assessment_category"
+            )
+
+            final_confidence = (
+                strongest_category_score
+            )
+
+
+        # ==================================================
+        # NO CATEGORY SCORE
+        # ==================================================
+
+        else:
+
+            if (
+                best_skill_career
+                and
+                best_skill_career["score"] >= 50
+            ):
+
+                final_career = (
+                    best_skill_career["career"]
+                )
+
+                prediction_source = (
+                    "skills"
+                )
+
+                final_confidence = (
+                    skill_match_score
+                )
+
+            else:
+
+                final_career = ml_career
+
+                prediction_source = (
+                    "machine_learning_model"
+                )
+
+                final_confidence = (
+
+                    ml_confidence
+                    if ml_confidence is not None
+                    else 0
+
+                )
+
+
+        # ==================================================
+        # LIMIT CONFIDENCE
+        # ==================================================
+
+        final_confidence = min(
+            100,
+            max(
+                0,
+                float(final_confidence)
+            )
+        )
+
+
+        # ==================================================
+        # REASON
+        # ==================================================
+
+        if strongest_category_score > 0:
+
+            reason = (
+
+                f"Your Skill Assessment shows "
+                f"{strongest_category_score:.2f}% strength "
+                f"in the {strongest_category.replace('_', ' ')} "
+                f"category. Therefore, {final_career} "
+                f"is recommended as your primary career."
+
+            )
+
+        elif (
+            best_skill_career
+            and
+            best_skill_career["score"] >= 50
+        ):
+
+            reason = (
+
+                f"Your current skills show a "
+                f"{skill_match_score:.2f}% match for "
+                f"{final_career}."
+
+            )
+
+        else:
+
+            reason = (
+
+                f"The ML model predicted "
+                f"{final_career} using your profile, "
+                f"academic performance and assessment data."
+
+            )
+
+
+        # ==================================================
         # RESPONSE
-        # ==================================
+        # ==================================================
 
         response = {
 
@@ -484,15 +1259,63 @@ def predict():
                 True,
 
             "career":
-                career,
+                final_career,
+
+            "recommendedCareer":
+                final_career,
+
+            "mlCareer":
+                ml_career,
 
             "confidence":
                 round(
-                    confidence,
+                    final_confidence,
                     2
-                )
-                if confidence is not None
-                else None,
+                ),
+
+            "mlConfidence":
+                (
+                    round(
+                        ml_confidence,
+                        2
+                    )
+                    if ml_confidence is not None
+                    else None
+                ),
+
+            "predictionSource":
+                prediction_source,
+
+            "strongestCategory":
+                strongest_category,
+
+            "strongestCategoryScore":
+                round(
+                    strongest_category_score,
+                    2
+                ),
+
+            "skillMatchScore":
+                round(
+                    skill_match_score,
+                    2
+                ),
+
+            "skillCareer":
+                (
+                    best_skill_career["career"]
+                    if best_skill_career
+                    else None
+                ),
+
+            "skillCareerScores":
+                skill_career_scores,
+
+            "categoryScores":
+                category_scores,
+
+            "reason":
+                reason,
 
             "message":
                 "Career prediction generated successfully."
@@ -500,16 +1323,16 @@ def predict():
         }
 
 
-        # ==================================
-        # PRINT RESULT
-        # ==================================
+        # ==================================================
+        # FINAL DEBUG
+        # ==================================================
 
         print(
             "\n=========================================="
         )
 
         print(
-            "PREDICTION RESULT"
+            "🎯 FINAL PREDICTION"
         )
 
         print(
@@ -517,13 +1340,47 @@ def predict():
         )
 
         print(
-            "Career:",
-            career
+            "ML Career:",
+            ml_career
         )
 
         print(
-            "Confidence:",
-            confidence
+            "Best Skill Career:",
+            (
+                best_skill_career["career"]
+                if best_skill_career
+                else "None"
+            )
+        )
+
+        print(
+            "Skill Match:",
+            skill_match_score
+        )
+
+        print(
+            "Strongest Category:",
+            strongest_category
+        )
+
+        print(
+            "Strongest Category Score:",
+            strongest_category_score
+        )
+
+        print(
+            "FINAL CAREER:",
+            final_career
+        )
+
+        print(
+            "FINAL CONFIDENCE:",
+            final_confidence
+        )
+
+        print(
+            "PREDICTION SOURCE:",
+            prediction_source
         )
 
         print(
@@ -535,6 +1392,10 @@ def predict():
             response
         ), 200
 
+
+    # ======================================================
+    # INVALID INPUT
+    # ======================================================
 
     except ValueError as e:
 
@@ -552,18 +1413,18 @@ def predict():
         }), 400
 
 
-    except Exception as e:
+    # ======================================================
+    # GENERAL ERROR
+    # ======================================================
 
-        # ==================================
-        # ERROR
-        # ==================================
+    except Exception as e:
 
         print(
             "\n=========================================="
         )
 
         print(
-            "PREDICTION ERROR"
+            "❌ PREDICTION ERROR"
         )
 
         print(
@@ -591,20 +1452,19 @@ def predict():
         }), 500
 
 
-# ==========================================
+# ==========================================================
 # RUN SERVER
-# ==========================================
+# ==========================================================
 
 if __name__ == "__main__":
 
-    # Railway automatically provides PORT.
-    # Local machine will use 5000.
-
     port = int(
+
         os.environ.get(
             "PORT",
             5000
         )
+
     )
 
 
@@ -613,15 +1473,11 @@ if __name__ == "__main__":
     )
 
     print(
-        "AI CAREER ML SERVER"
+        "🚀 AI CAREER ML SERVER"
     )
 
     print(
         "=========================================="
-    )
-
-    print(
-        "Server:"
     )
 
     print(
@@ -630,53 +1486,19 @@ if __name__ == "__main__":
 
 
     print(
-        "\nPrediction API:"
-    )
-
-    print(
-        f"http://localhost:{port}/predict"
+        "\nSupported Careers:"
     )
 
 
-    print(
-        "\nHealth API:"
-    )
-
-    print(
-        f"http://localhost:{port}/health"
-    )
-
-
-    print(
-        "\nFeatures:"
-    )
-
-
-    for index, feature in enumerate(
-        FEATURES,
-        start=1
-    ):
+    for career in CAREER_SKILLS:
 
         print(
-            f"{index}. {feature}"
+            f"- {career}"
         )
 
 
     print(
-        "\nRemoved Features:"
-    )
-
-    print(
-        "- best_skill"
-    )
-
-    print(
-        "- best_skill_score"
-    )
-
-
-    print(
-        "==========================================\n"
+        "\n==========================================\n"
     )
 
 
