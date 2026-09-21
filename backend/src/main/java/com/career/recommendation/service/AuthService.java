@@ -8,6 +8,7 @@ import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import com.career.recommendation.service.FirebasePasswordResetService;
 
 import java.security.SecureRandom;
 import java.util.HashMap;
@@ -19,17 +20,20 @@ public class AuthService {
     private final UserRepository userRepository;
     private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
+    private final FirebasePasswordResetService firebasePasswordResetService;
 
 
     public AuthService(
-            UserRepository userRepository,
-            JavaMailSender mailSender,
-            PasswordEncoder passwordEncoder) {
+        UserRepository userRepository,
+        JavaMailSender mailSender,
+        PasswordEncoder passwordEncoder,
+        FirebasePasswordResetService firebasePasswordResetService) {
 
-        this.userRepository = userRepository;
-        this.mailSender = mailSender;
-        this.passwordEncoder = passwordEncoder;
-    }
+    this.userRepository = userRepository;
+    this.mailSender = mailSender;
+    this.passwordEncoder = passwordEncoder;
+    this.firebasePasswordResetService = firebasePasswordResetService;
+}
 
 
     // =========================================================
@@ -240,8 +244,8 @@ public class AuthService {
         // =====================================================
 
         String resetLink =
-                "http://localhost:5173/reset-password?token="
-                        + resetToken;
+        firebasePasswordResetService
+                .generatePasswordResetLink(user.getEmail());
 
 
         // =====================================================
