@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { sendPasswordResetEmail } from "firebase/auth";
-import { auth } from "../firebase";
+import authService from "../services/authService";
 
 function ForgotPassword() {
   const navigate = useNavigate();
@@ -17,16 +16,17 @@ function ForgotPassword() {
     setMessage("");
 
     try {
-      await sendPasswordResetEmail(auth, email.trim());
+      await authService.forgotPassword(email.trim());
 
       setMessage(
         "If an account exists with this email, a password reset link has been sent."
       );
     } catch (error) {
-      console.error("Firebase Forgot Password Error:", error);
+      console.error("Forgot Password Error:", error);
 
       setMessage(
-        "If an account exists with this email, a password reset link has been sent."
+        error.response?.data?.message ||
+          "Unable to send reset link. Please try again."
       );
     } finally {
       setLoading(false);
