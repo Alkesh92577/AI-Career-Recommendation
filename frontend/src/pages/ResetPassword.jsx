@@ -1,13 +1,16 @@
 import { useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import authService from "../services/authService";
+import {
+  verifyPasswordResetCode,
+  confirmPasswordReset,
+} from "firebase/auth";
+import { auth } from "../firebase";
 
 function ResetPassword() {
-
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
-  const token = searchParams.get("token");
+  const oobCode = searchParams.get("oobCode");
 
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,82 +23,86 @@ function ResetPassword() {
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     setMessage("");
 
-    if (!token) {
-      setMessage(
-        "Invalid password reset link."
-      );
+    if (!oobCode) {
+      setMessage("Invalid or expired password reset link.");
       return;
     }
 
     if (newPassword.length < 6) {
-      setMessage(
-        "Password must be at least 6 characters."
-      );
+      setMessage("Password must be at least 6 characters.");
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setMessage(
-        "Passwords do not match."
-      );
+      setMessage("Passwords do not match.");
       return;
     }
 
     setLoading(true);
 
     try {
+      // Check Firebase reset code
+      await verifyPasswordResetCode(auth, oobCode);
 
-      const response =
-        await authService.resetPassword(
-          token,
-          newPassword
-        );
-
-      if (response.success) {
-
-        setMessage(
-          response.message ||
-          "Password reset successful."
-        );
-
-        setNewPassword("");
-        setConfirmPassword("");
-
-        setTimeout(() => {
-          navigate("/login");
-        }, 1800);
-
-      } else {
-
-        setMessage(
-          response.message ||
-          "Password reset failed."
-        );
-      }
-
-    } catch (error) {
-
-      console.error(
-        "Reset Password Error:",
-        error
+      // Update Firebase password
+      await confirmPasswordReset(
+        auth,
+        oobCode,
+        newPassword
       );
 
       setMessage(
-        error.response?.data?.message ||
-        "Unable to reset password. Please request a new reset link."
+        "Password reset successful. You can now login."
       );
 
-    } finally {
+      setNewPassword("");
+      setConfirmPassword("");
 
+      setTimeout(() => {
+        navigate("/login");
+      }, 1800);
+
+    } catch (error) {
+      console.error(
+        "Firebase Reset Password Error:",
+        error
+      );
+
+      if (
+        error.code ===
+        "auth/expired-action-code"
+      ) {
+        setMessage(
+          "This password reset link has expired. Please request a new one."
+        );
+      } else if (
+        error.code ===
+        "auth/invalid-action-code"
+      ) {
+        setMessage(
+          "This password reset link is invalid or has already been used."
+        );
+      } else if (
+        error.code ===
+        "auth/weak-password"
+      ) {
+        setMessage(
+          "Password is too weak. Please use a stronger password."
+        );
+      } else {
+        setMessage(
+          "Unable to reset password. Please request a new reset link."
+        );
+      }
+
+    } finally {
       setLoading(false);
     }
   };
-
 
   return (
     <div className="auth-page">
@@ -114,11 +121,11 @@ function ResetPassword() {
           Create a new password for your account.
         </p>
 
-        {!token ? (
+        {!oobCode ? (
 
           <>
             <p className="message">
-              This password reset link is invalid.
+              This password reset link is invalid or expired.
             </p>
 
             <button
@@ -173,7 +180,6 @@ function ResetPassword() {
 
             </div>
 
-
             {/* CONFIRM PASSWORD */}
 
             <div className="password-wrapper">
@@ -208,13 +214,10 @@ function ResetPassword() {
                     : "Show password"
                 }
               >
-                {showConfirmPassword
-                  ? "◉"
-                  : "◌"}
+                {showConfirmPassword ? "◉" : "◌"}
               </button>
 
             </div>
-
 
             {/* SUBMIT */}
 
@@ -230,13 +233,11 @@ function ResetPassword() {
           </form>
         )}
 
-
-        {message && token && (
+        {message && oobCode && (
           <p className="message">
             {message}
           </p>
         )}
-
 
         <button
           type="button"
