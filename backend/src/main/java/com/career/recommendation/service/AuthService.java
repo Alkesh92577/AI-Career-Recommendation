@@ -4,12 +4,13 @@ import com.career.recommendation.dto.LoginRequest;
 import com.career.recommendation.dto.RegisterRequest;
 import com.career.recommendation.model.User;
 import com.career.recommendation.repository.UserRepository;
-import org.springframework.mail.SimpleMailMessage;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import com.career.recommendation.service.FirebasePasswordResetService;
 
+import java.net.URI;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpResponse;
 import java.security.SecureRandom;
 import java.util.HashMap;
 import java.util.Map;
@@ -18,23 +19,20 @@ import java.util.Map;
 public class AuthService {
 
     private final UserRepository userRepository;
-    private final JavaMailSender mailSender;
     private final PasswordEncoder passwordEncoder;
     private final FirebasePasswordResetService firebasePasswordResetService;
 
+    private final HttpClient httpClient = HttpClient.newHttpClient();
 
     public AuthService(
-        UserRepository userRepository,
-        JavaMailSender mailSender,
-        PasswordEncoder passwordEncoder,
-        FirebasePasswordResetService firebasePasswordResetService) {
+            UserRepository userRepository,
+            PasswordEncoder passwordEncoder,
+            FirebasePasswordResetService firebasePasswordResetService) {
 
-    this.userRepository = userRepository;
-    this.mailSender = mailSender;
-    this.passwordEncoder = passwordEncoder;
-    this.firebasePasswordResetService = firebasePasswordResetService;
-}
-
+        this.userRepository = userRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.firebasePasswordResetService = firebasePasswordResetService;
+    }
 
     // =========================================================
     // REGISTER
@@ -57,12 +55,7 @@ public class AuthService {
         user.setName(request.getName());
         user.setEmail(request.getEmail());
 
-        // =====================================================
-        // IMPORTANT:
         // Password ko plain text me save nahi karna.
-        // BCrypt se encrypt/hash karke save karenge.
-        // =====================================================
-
         user.setPassword(
                 passwordEncoder.encode(request.getPassword())
         );
@@ -80,7 +73,6 @@ public class AuthService {
 
         return response;
     }
-
 
     // =========================================================
     // LOGIN
@@ -102,15 +94,12 @@ public class AuthService {
             return response;
         }
 
-
         String storedPassword = user.getPassword();
 
         boolean passwordMatches = false;
 
-
         // =====================================================
-        // NEW USERS
-        // BCrypt password check
+        // NEW USERS - BCrypt
         // =====================================================
 
         if (isBCryptPassword(storedPassword)) {
@@ -119,24 +108,19 @@ public class AuthService {
                     request.getPassword(),
                     storedPassword
             );
-
         }
 
         // =====================================================
-        // OLD USERS
-        // Existing database me plain-text password ho sakta hai.
-        //
-        // Successful login ke baad automatically BCrypt me
-        // convert kar denge.
+        // OLD USERS - Plain Text
         // =====================================================
 
         else {
 
             passwordMatches =
                     storedPassword != null
-                    && storedPassword.equals(request.getPassword());
+                            && storedPassword.equals(request.getPassword());
 
-
+            // Successful login ke baad BCrypt me convert.
             if (passwordMatches) {
 
                 user.setPassword(
@@ -149,7 +133,6 @@ public class AuthService {
             }
         }
 
-
         // =====================================================
         // INVALID PASSWORD
         // =====================================================
@@ -161,7 +144,6 @@ public class AuthService {
 
             return response;
         }
-
 
         // =====================================================
         // LOGIN SUCCESS
@@ -177,7 +159,6 @@ public class AuthService {
         return response;
     }
 
-
     // =========================================================
     // FORGOT PASSWORD
     // =========================================================
@@ -190,20 +171,11 @@ public class AuthService {
                 .findByEmail(email)
                 .orElse(null);
 
-
-        /*
-         * Security:
-         * User exists hai ya nahi, dono cases mein same
-         * message return karenge.
-         */
-
+        // Security:
+        // User exists hai ya nahi, dono cases mein same message.
         if (user == null) {
 
-            response.put(
-                    "success",
-                    true
-            );
-
+            response.put("success", true);
             response.put(
                     "message",
                     "If an account exists with this email, a password reset link will be sent."
@@ -212,86 +184,61 @@ public class AuthService {
             return response;
         }
 
-
         // =====================================================
-        // SECURE RANDOM TOKEN
+        // OLD MYSQL RESET TOKEN
         // =====================================================
+        // Ye abhi database compatibility ke liye rakha gaya hai.
+        // Actual Firebase reset link FirebasePasswordResetService
+        // generate karega.
 
         String resetToken = generateSecureToken();
-
-
-        // =====================================================
-        // TOKEN 15 MINUTES VALID
-        // =====================================================
 
         long expiryTime =
                 System.currentTimeMillis()
                         + (15 * 60 * 1000);
-
-
-        // =====================================================
-        // SAVE TOKEN
-        // =====================================================
 
         user.setResetToken(resetToken);
         user.setResetTokenExpiry(expiryTime);
 
         userRepository.save(user);
 
-
         // =====================================================
-        // RESET LINK
+        // FIREBASE RESET LINK
         // =====================================================
 
         String resetLink =
-        firebasePasswordResetService
-                .generatePasswordResetLink(user.getEmail());
-
-
-        // =====================================================
-        // EMAIL
-        // =====================================================
-
-        SimpleMailMessage message =
-                new SimpleMailMessage();
-
-        message.setFrom(
-                System.getenv("MAIL_USERNAME")
-        );
-
-        message.setTo(
-                user.getEmail()
-        );
-
-        message.setSubject(
-                "AI Career Recommendation - Password Reset"
-        );
-
-        message.setText(
-                "Hello " + user.getName() + ",\n\n"
-                + "We received a request to reset your password.\n\n"
-                + "Click the link below to create a new password:\n\n"
-                + resetLink + "\n\n"
-                + "This link will expire in 15 minutes.\n\n"
-                + "If you did not request a password reset, "
-                + "you can safely ignore this email.\n\n"
-                + "Regards,\n"
-                + "AI Career Recommendation Team"
-        );
-
+                firebasePasswordResetService
+                        .generatePasswordResetLink(user.getEmail());
 
         // =====================================================
-        // SEND EMAIL
+        // SEND EMAIL USING RESEND API
         // =====================================================
 
-        mailSender.send(message);
+        try {
 
+            sendPasswordResetEmail(
+                    user.getEmail(),
+                    user.getName(),
+                    resetLink
+            );
 
-        response.put(
-                "success",
-                true
-        );
+        } catch (Exception e) {
 
+            System.err.println(
+                    "❌ Resend email sending failed: "
+                            + e.getMessage()
+            );
+
+            response.put("success", false);
+            response.put(
+                    "message",
+                    "Unable to send password reset email. Please try again later."
+            );
+
+            return response;
+        }
+
+        response.put("success", true);
         response.put(
                 "message",
                 "If an account exists with this email, a password reset link will be sent."
@@ -300,6 +247,145 @@ public class AuthService {
         return response;
     }
 
+    // =========================================================
+    // RESEND EMAIL API
+    // =========================================================
+
+    private void sendPasswordResetEmail(
+            String recipientEmail,
+            String recipientName,
+            String resetLink) throws Exception {
+
+        String apiKey = System.getenv("RESEND_API_KEY");
+
+        if (apiKey == null || apiKey.isBlank()) {
+
+            throw new IllegalStateException(
+                    "RESEND_API_KEY environment variable is not configured."
+            );
+        }
+
+        /*
+         * Free Resend testing sender.
+         *
+         * IMPORTANT:
+         * onboarding@resend.dev can be used for testing,
+         * but Resend may restrict recipients unless your
+         * sending domain is verified.
+         *
+         * We can change this later to your verified domain.
+         */
+        String fromEmail =
+                System.getenv("RESEND_FROM_EMAIL");
+
+        if (fromEmail == null || fromEmail.isBlank()) {
+
+            fromEmail = "onboarding@resend.dev";
+        }
+
+        String fromName =
+                System.getenv("RESEND_FROM_NAME");
+
+        if (fromName == null || fromName.isBlank()) {
+
+            fromName = "AI Career Recommendation";
+        }
+
+        String subject =
+                "AI Career Recommendation - Password Reset";
+
+        String text =
+                "Hello " + recipientName + ",\n\n"
+                        + "We received a request to reset your password.\n\n"
+                        + "Click the link below to create a new password:\n\n"
+                        + resetLink + "\n\n"
+                        + "This link will expire in 15 minutes.\n\n"
+                        + "If you did not request a password reset, "
+                        + "you can safely ignore this email.\n\n"
+                        + "Regards,\n"
+                        + "AI Career Recommendation Team";
+
+        String jsonBody =
+                "{"
+                        + "\"from\":\""
+                        + escapeJson(fromName + " <" + fromEmail + ">")
+                        + "\","
+                        + "\"to\":[\""
+                        + escapeJson(recipientEmail)
+                        + "\"],"
+                        + "\"subject\":\""
+                        + escapeJson(subject)
+                        + "\","
+                        + "\"text\":\""
+                        + escapeJson(text)
+                        + "\""
+                        + "}";
+
+        HttpRequest request =
+                HttpRequest.newBuilder()
+                        .uri(URI.create("https://api.resend.com/emails"))
+                        .header(
+                                "Authorization",
+                                "Bearer " + apiKey
+                        )
+                        .header(
+                                "Content-Type",
+                                "application/json"
+                        )
+                        .POST(
+                                HttpRequest.BodyPublishers.ofString(
+                                        jsonBody
+                                )
+                        )
+                        .build();
+
+        HttpResponse<String> response =
+                httpClient.send(
+                        request,
+                        HttpResponse.BodyHandlers.ofString()
+                );
+
+        System.out.println(
+                "📧 Resend HTTP Status: "
+                        + response.statusCode()
+        );
+
+        if (response.statusCode() < 200
+                || response.statusCode() >= 300) {
+
+            System.err.println(
+                    "❌ Resend API Response: "
+                            + response.body()
+            );
+
+            throw new RuntimeException(
+                    "Resend API failed with HTTP "
+                            + response.statusCode()
+            );
+        }
+
+        System.out.println(
+                "✅ Password reset email sent successfully through Resend."
+        );
+    }
+
+    // =========================================================
+    // JSON ESCAPE
+    // =========================================================
+
+    private String escapeJson(String value) {
+
+        if (value == null) {
+            return "";
+        }
+
+        return value
+                .replace("\\", "\\\\")
+                .replace("\"", "\\\"")
+                .replace("\r", "\\r")
+                .replace("\n", "\\n")
+                .replace("\t", "\\t");
+    }
 
     // =========================================================
     // RESET PASSWORD
@@ -312,7 +398,6 @@ public class AuthService {
         Map<String, Object> response =
                 new HashMap<>();
 
-
         // =====================================================
         // FIND USER BY RESET TOKEN
         // =====================================================
@@ -323,13 +408,12 @@ public class AuthService {
                         .stream()
                         .filter(u ->
                                 token != null
-                                && token.equals(
+                                        && token.equals(
                                         u.getResetToken()
                                 )
                         )
                         .findFirst()
                         .orElse(null);
-
 
         // =====================================================
         // INVALID TOKEN
@@ -337,11 +421,7 @@ public class AuthService {
 
         if (user == null) {
 
-            response.put(
-                    "success",
-                    false
-            );
-
+            response.put("success", false);
             response.put(
                     "message",
                     "Invalid or expired reset token."
@@ -349,7 +429,6 @@ public class AuthService {
 
             return response;
         }
-
 
         // =====================================================
         // TOKEN EXPIRY CHECK
@@ -359,11 +438,7 @@ public class AuthService {
                 || System.currentTimeMillis()
                 > user.getResetTokenExpiry()) {
 
-            response.put(
-                    "success",
-                    false
-            );
-
+            response.put("success", false);
             response.put(
                     "message",
                     "Reset link has expired. Please request a new one."
@@ -372,16 +447,13 @@ public class AuthService {
             return response;
         }
 
-
         // =====================================================
         // NEW PASSWORD
-        // BCrypt hash karke save karenge.
         // =====================================================
 
         user.setPassword(
                 passwordEncoder.encode(newPassword)
         );
-
 
         // =====================================================
         // TOKEN INVALIDATE
@@ -390,19 +462,13 @@ public class AuthService {
         user.setResetToken(null);
         user.setResetTokenExpiry(null);
 
-
         userRepository.save(user);
-
 
         // =====================================================
         // SUCCESS
         // =====================================================
 
-        response.put(
-                "success",
-                true
-        );
-
+        response.put("success", true);
         response.put(
                 "message",
                 "Password reset successful. You can now login with your new password."
@@ -410,7 +476,6 @@ public class AuthService {
 
         return response;
     }
-
 
     // =========================================================
     // CHECK WHETHER PASSWORD IS BCRYPT
@@ -426,7 +491,6 @@ public class AuthService {
                 || password.startsWith("$2b$")
                 || password.startsWith("$2y$");
     }
-
 
     // =========================================================
     // SECURE TOKEN GENERATOR
