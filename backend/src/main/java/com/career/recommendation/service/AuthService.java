@@ -4,6 +4,9 @@ import com.career.recommendation.dto.LoginRequest;
 import com.career.recommendation.dto.RegisterRequest;
 import com.career.recommendation.model.User;
 import com.career.recommendation.repository.UserRepository;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthException;
+import com.google.firebase.auth.UserRecord;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -42,36 +45,180 @@ public class AuthService {
 
         Map<String, Object> response = new HashMap<>();
 
-        if (userRepository.existsByEmail(request.getEmail())) {
+        String email = request.getEmail().trim().toLowerCase();
+
+        // =====================================================
+        // CHECK MYSQL USER
+        // =====================================================
+
+        if (userRepository.existsByEmail(email)) {
 
             response.put("success", false);
-            response.put("message", "Email already registered");
+            response.put(
+                    "message",
+                    "Email already registered"
+            );
 
             return response;
         }
 
-        User user = new User();
+        // =====================================================
+        // CREATE FIREBASE USER
+        // =====================================================
 
-        user.setName(request.getName());
-        user.setEmail(request.getEmail());
+        UserRecord firebaseUser = null;
 
-        // Password ko plain text me save nahi karna.
-        user.setPassword(
-                passwordEncoder.encode(request.getPassword())
-        );
+        try {
 
-        user.setRole("STUDENT");
+            UserRecord.CreateRequest firebaseRequest =
+                    new UserRecord.CreateRequest()
+                            .setEmail(email)
+                            .setPassword(request.getPassword())
+                            .setDisplayName(request.getName());
 
-        User savedUser = userRepository.save(user);
+            firebaseUser =
+                    FirebaseAuth.getInstance()
+                            .createUser(firebaseRequest);
 
-        response.put("success", true);
-        response.put("message", "Registration successful");
-        response.put("userId", savedUser.getId());
-        response.put("name", savedUser.getName());
-        response.put("email", savedUser.getEmail());
-        response.put("role", savedUser.getRole());
+            System.out.println(
+                    "✅ Firebase user created successfully: "
+                            + firebaseUser.getUid()
+            );
 
-        return response;
+        } catch (FirebaseAuthException e) {
+
+            System.err.println(
+                    "❌ Firebase registration failed: "
+                            + e.getMessage()
+            );
+
+            String errorMessage =
+                    e.getMessage() != null
+                            ? e.getMessage()
+                            : "Unable to create Firebase account";
+
+            response.put("success", false);
+            response.put(
+                    "message",
+                    errorMessage
+            );
+
+            return response;
+
+        } catch (Exception e) {
+
+            System.err.println(
+                    "❌ Firebase registration error: "
+                            + e.getMessage()
+            );
+
+            response.put("success", false);
+            response.put(
+                    "message",
+                    "Unable to create Firebase account"
+            );
+
+            return response;
+        }
+
+        // =====================================================
+        // CREATE MYSQL USER
+        // =====================================================
+
+        try {
+
+            User user = new User();
+
+            user.setName(request.getName());
+            user.setEmail(email);
+
+            // Password ko plain text me save nahi karna.
+            user.setPassword(
+                    passwordEncoder.encode(
+                            request.getPassword()
+                    )
+            );
+
+            user.setRole("STUDENT");
+
+            User savedUser =
+                    userRepository.save(user);
+
+            System.out.println(
+                    "✅ MySQL user created successfully: "
+                            + savedUser.getId()
+            );
+
+            // =================================================
+            // REGISTRATION SUCCESS
+            // =================================================
+
+            response.put("success", true);
+            response.put(
+                    "message",
+                    "Registration successful"
+            );
+            response.put(
+                    "userId",
+                    savedUser.getId()
+            );
+            response.put(
+                    "name",
+                    savedUser.getName()
+            );
+            response.put(
+                    "email",
+                    savedUser.getEmail()
+            );
+            response.put(
+                    "role",
+                    savedUser.getRole()
+            );
+            response.put(
+                    "firebaseUid",
+                    firebaseUser.getUid()
+            );
+
+            return response;
+
+        } catch (Exception e) {
+
+            // =================================================
+            // ROLLBACK FIREBASE USER
+            // =================================================
+            // Agar MySQL user create nahi hua,
+            // to Firebase mein orphan account nahi chhodenge.
+
+            System.err.println(
+                    "❌ MySQL registration failed: "
+                            + e.getMessage()
+            );
+
+            try {
+
+                FirebaseAuth.getInstance()
+                        .deleteUser(firebaseUser.getUid());
+
+                System.out.println(
+                        "✅ Firebase user rollback successful."
+                );
+
+            } catch (Exception rollbackException) {
+
+                System.err.println(
+                        "❌ Firebase rollback failed: "
+                                + rollbackException.getMessage()
+                );
+            }
+
+            response.put("success", false);
+            response.put(
+                    "message",
+                    "Registration failed. Please try again."
+            );
+
+            return response;
+        }
     }
 
     // =========================================================
@@ -82,14 +229,20 @@ public class AuthService {
 
         Map<String, Object> response = new HashMap<>();
 
+        String email =
+                request.getEmail().trim().toLowerCase();
+
         User user = userRepository
-                .findByEmail(request.getEmail())
+                .findByEmail(email)
                 .orElse(null);
 
         if (user == null) {
 
             response.put("success", false);
-            response.put("message", "User not found");
+            response.put(
+                    "message",
+                    "User not found"
+            );
 
             return response;
         }
@@ -104,10 +257,11 @@ public class AuthService {
 
         if (isBCryptPassword(storedPassword)) {
 
-            passwordMatches = passwordEncoder.matches(
-                    request.getPassword(),
-                    storedPassword
-            );
+            passwordMatches =
+                    passwordEncoder.matches(
+                            request.getPassword(),
+                            storedPassword
+                    );
         }
 
         // =====================================================
@@ -118,7 +272,9 @@ public class AuthService {
 
             passwordMatches =
                     storedPassword != null
-                            && storedPassword.equals(request.getPassword());
+                            && storedPassword.equals(
+                            request.getPassword()
+                    );
 
             // Successful login ke baad BCrypt me convert.
             if (passwordMatches) {
@@ -140,7 +296,10 @@ public class AuthService {
         if (!passwordMatches) {
 
             response.put("success", false);
-            response.put("message", "Invalid password");
+            response.put(
+                    "message",
+                    "Invalid password"
+            );
 
             return response;
         }
@@ -150,11 +309,26 @@ public class AuthService {
         // =====================================================
 
         response.put("success", true);
-        response.put("message", "Login successful");
-        response.put("userId", user.getId());
-        response.put("name", user.getName());
-        response.put("email", user.getEmail());
-        response.put("role", user.getRole());
+        response.put(
+                "message",
+                "Login successful"
+        );
+        response.put(
+                "userId",
+                user.getId()
+        );
+        response.put(
+                "name",
+                user.getName()
+        );
+        response.put(
+                "email",
+                user.getEmail()
+        );
+        response.put(
+                "role",
+                user.getRole()
+        );
 
         return response;
     }
@@ -166,6 +340,8 @@ public class AuthService {
     public Map<String, Object> forgotPassword(String email) {
 
         Map<String, Object> response = new HashMap<>();
+
+        email = email.trim().toLowerCase();
 
         User user = userRepository
                 .findByEmail(email)
@@ -187,11 +363,9 @@ public class AuthService {
         // =====================================================
         // OLD MYSQL RESET TOKEN
         // =====================================================
-        // Ye abhi database compatibility ke liye rakha gaya hai.
-        // Actual Firebase reset link FirebasePasswordResetService
-        // generate karega.
 
-        String resetToken = generateSecureToken();
+        String resetToken =
+                generateSecureToken();
 
         long expiryTime =
                 System.currentTimeMillis()
@@ -208,7 +382,9 @@ public class AuthService {
 
         String resetLink =
                 firebasePasswordResetService
-                        .generatePasswordResetLink(user.getEmail());
+                        .generatePasswordResetLink(
+                                user.getEmail()
+                        );
 
         // =====================================================
         // SEND EMAIL USING RESEND API
@@ -229,7 +405,10 @@ public class AuthService {
                             + e.getMessage()
             );
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
             response.put(
                     "message",
                     "Unable to send password reset email. Please try again later."
@@ -238,7 +417,10 @@ public class AuthService {
             return response;
         }
 
-        response.put("success", true);
+        response.put(
+                "success",
+                true
+        );
         response.put(
                 "message",
                 "If an account exists with this email, a password reset link will be sent."
@@ -256,7 +438,8 @@ public class AuthService {
             String recipientName,
             String resetLink) throws Exception {
 
-        String apiKey = System.getenv("RESEND_API_KEY");
+        String apiKey =
+                System.getenv("RESEND_API_KEY");
 
         if (apiKey == null || apiKey.isBlank()) {
 
@@ -265,22 +448,13 @@ public class AuthService {
             );
         }
 
-        /*
-         * Free Resend testing sender.
-         *
-         * IMPORTANT:
-         * onboarding@resend.dev can be used for testing,
-         * but Resend may restrict recipients unless your
-         * sending domain is verified.
-         *
-         * We can change this later to your verified domain.
-         */
         String fromEmail =
                 System.getenv("RESEND_FROM_EMAIL");
 
         if (fromEmail == null || fromEmail.isBlank()) {
 
-            fromEmail = "onboarding@resend.dev";
+            fromEmail =
+                    "onboarding@resend.dev";
         }
 
         String fromName =
@@ -288,7 +462,8 @@ public class AuthService {
 
         if (fromName == null || fromName.isBlank()) {
 
-            fromName = "AI Career Recommendation";
+            fromName =
+                    "AI Career Recommendation";
         }
 
         String subject =
@@ -308,10 +483,17 @@ public class AuthService {
         String jsonBody =
                 "{"
                         + "\"from\":\""
-                        + escapeJson(fromName + " <" + fromEmail + ">")
+                        + escapeJson(
+                        fromName
+                                + " <"
+                                + fromEmail
+                                + ">"
+                )
                         + "\","
                         + "\"to\":[\""
-                        + escapeJson(recipientEmail)
+                        + escapeJson(
+                        recipientEmail
+                )
                         + "\"],"
                         + "\"subject\":\""
                         + escapeJson(subject)
@@ -323,7 +505,11 @@ public class AuthService {
 
         HttpRequest request =
                 HttpRequest.newBuilder()
-                        .uri(URI.create("https://api.resend.com/emails"))
+                        .uri(
+                                URI.create(
+                                        "https://api.resend.com/emails"
+                                )
+                        )
                         .header(
                                 "Authorization",
                                 "Bearer " + apiKey
@@ -333,9 +519,8 @@ public class AuthService {
                                 "application/json"
                         )
                         .POST(
-                                HttpRequest.BodyPublishers.ofString(
-                                        jsonBody
-                                )
+                                HttpRequest.BodyPublishers
+                                        .ofString(jsonBody)
                         )
                         .build();
 
@@ -421,7 +606,10 @@ public class AuthService {
 
         if (user == null) {
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
             response.put(
                     "message",
                     "Invalid or expired reset token."
@@ -438,7 +626,10 @@ public class AuthService {
                 || System.currentTimeMillis()
                 > user.getResetTokenExpiry()) {
 
-            response.put("success", false);
+            response.put(
+                    "success",
+                    false
+            );
             response.put(
                     "message",
                     "Reset link has expired. Please request a new one."
@@ -452,7 +643,9 @@ public class AuthService {
         // =====================================================
 
         user.setPassword(
-                passwordEncoder.encode(newPassword)
+                passwordEncoder.encode(
+                        newPassword
+                )
         );
 
         // =====================================================
@@ -468,7 +661,10 @@ public class AuthService {
         // SUCCESS
         // =====================================================
 
-        response.put("success", true);
+        response.put(
+                "success",
+                true
+        );
         response.put(
                 "message",
                 "Password reset successful. You can now login with your new password."
@@ -481,7 +677,8 @@ public class AuthService {
     // CHECK WHETHER PASSWORD IS BCRYPT
     // =========================================================
 
-    private boolean isBCryptPassword(String password) {
+    private boolean isBCryptPassword(
+            String password) {
 
         if (password == null) {
             return false;
